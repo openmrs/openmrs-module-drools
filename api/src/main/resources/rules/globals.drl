@@ -1,0 +1,4 @@
+import org.openmrs.module.drools.session.ExternalEvaluatorManager;
+
+// globals
+global ExternalEvaluatorManager evaluatorManager;
