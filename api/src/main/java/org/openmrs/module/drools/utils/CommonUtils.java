@@ -7,8 +7,6 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.util.Objects;
 
-import org.apache.commons.lang.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.drools.decisiontable.InputType;
@@ -68,12 +66,5 @@ public class CommonUtils {
         } catch (FileNotFoundException e) {
             throw new IOException("Excel file not found: " + excelFilePath, e);
         }
-    }
-
-    /**
-     * TODO: Shouldn't be committed in production
-     */
-    public static void debug(Object object) {
-        System.out.println(ReflectionToStringBuilder.toString(object, ToStringStyle.MULTI_LINE_STYLE));
     }
 }

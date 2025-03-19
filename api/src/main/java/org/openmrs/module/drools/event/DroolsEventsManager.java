@@ -27,9 +27,7 @@ public class DroolsEventsManager {
                 sessionConfig.getSystemEventListeners().forEach(systemEventListener -> {
                     systemEventListener.setSession(session);
                     systemEventListener.setDaemonToken(daemonToken);
-                    systemEventListener.getSuscribedActions().forEach(action -> {
-                        System.out.println("Subscribing to " + systemEventListener.getSubscribedClass() + " for action "
-                                + action.toString());
+                    systemEventListener.getSubscribedActions().forEach(action -> {
                         Event.subscribe(systemEventListener.getSubscribedClass(), action.toString(),
                                 systemEventListener);
                     });
@@ -38,10 +36,10 @@ public class DroolsEventsManager {
         }
     }
 
-    public void unsubsribeSessionEventListenersIfNecessary(String sessionId) {
+    public void unsubscribeSessionEventListenersIfNecessary(String sessionId) {
         if (activeSubscriptions.containsKey(sessionId)) {
             activeSubscriptions.get(sessionId).forEach(systemEventListener -> {
-                systemEventListener.getSuscribedActions().forEach(action -> {
+                systemEventListener.getSubscribedActions().forEach(action -> {
                     Event.unsubscribe(systemEventListener.getSubscribedClass(), action, systemEventListener);
                 });
             });

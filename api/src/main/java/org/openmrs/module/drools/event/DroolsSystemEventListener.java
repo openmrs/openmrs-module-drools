@@ -19,7 +19,7 @@ public abstract class DroolsSystemEventListener implements EventListener {
 
     private KieSession session;
 
-    abstract public List<Event.Action> getSuscribedActions();
+    abstract public List<Event.Action> getSubscribedActions();
 
     abstract public Class<?> getSubscribedClass();
 
