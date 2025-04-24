@@ -13,6 +13,7 @@ import org.openmrs.event.EventListener;
 import org.openmrs.module.DaemonToken;
 
 public abstract class DroolsSystemEventListener implements EventListener {
+
     private Log log = LogFactory.getLog(this.getClass());
 
     private DaemonToken daemonToken;

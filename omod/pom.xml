@@ -14,13 +14,13 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>drools-api</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<groupId>${project.parent.groupId}</groupId>
+			<artifactId>${project.parent.artifactId}-api</artifactId>
+			<version>${project.parent.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>${project.parent.groupId}</groupId>
-			<artifactId>${project.parent.artifactId}-api</artifactId>
+			<artifactId>drools-patient-flags</artifactId>
 			<version>${project.parent.version}</version>
 		</dependency>
 		<dependency>
@@ -35,16 +35,59 @@
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.openmrs</groupId>
+			<artifactId>event-api</artifactId>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
 		<finalName>${project.parent.artifactId}-${project.parent.version}</finalName>
+		<resources>
+		<!-- First resource set: Binary files with filtering OFF -->
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>false</filtering>
+				<includes>
+					<include>**/*.xlsx</include>
+					<include>**/*.drl</include>
+				</includes>
+			</resource>
+		<!-- Second resource set: All other files with filtering ON -->
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+				<excludes>
+					<exclude>**/*.xlsx</exclude>
+					<exclude>**/*.drl</exclude>
+				</excludes>
+			</resource>
+		</resources>
 
 		<plugins>
 			<plugin>
-				<groupId>org.openmrs.maven.plugins</groupId>
-				<artifactId>maven-openmrs-plugin</artifactId>
-			</plugin>
+                <groupId>org.openmrs.maven.plugins</groupId>
+                <artifactId>maven-openmrs-plugin</artifactId>
+
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>init</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>initialize-module</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>pack</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>package-module</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>

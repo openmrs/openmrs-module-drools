@@ -20,6 +20,10 @@ public class SimpleRuleProvider implements RuleProvider {
 	@Autowired
 	private TestCalculationsHelper calculationsHelper;
 
+	public Boolean isEnabled() {
+		return true;
+	}
+
 	@Override
 	public List<RuleResource> getRuleResources() {
 		return Collections
@@ -30,7 +34,7 @@ public class SimpleRuleProvider implements RuleProvider {
 	public List<RuleSessionConfig> getSessionConfigs() {
 		HashMap<String, Object> globals = new HashMap<>();
 		globals.put("helper", calculationsHelper);
-		return Collections.singletonList(new RuleSessionConfig("test1", true, globals, Collections.emptyList(),
+		return Collections.singletonList(new RuleSessionConfig("test1", true, false, globals, Collections.emptyList(),
 				Collections.emptyList()));
 	}
 

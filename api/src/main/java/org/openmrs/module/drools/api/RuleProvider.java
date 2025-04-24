@@ -8,10 +8,12 @@ import java.util.List;
 import java.util.Map;
 
 public interface RuleProvider {
-	
+
+	Boolean isEnabled();
+
 	List<RuleResource> getRuleResources();
-	
+
 	List<RuleSessionConfig> getSessionConfigs();
-	
+
 	Map<String, ExternalEvaluator> getExternalEvaluators();
 }

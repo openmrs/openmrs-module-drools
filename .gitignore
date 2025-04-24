@@ -1,6 +1,7 @@
 *.class
 *.iml
 *.idea
+*.vscode
 .settings
 .project
 *.sass-cache

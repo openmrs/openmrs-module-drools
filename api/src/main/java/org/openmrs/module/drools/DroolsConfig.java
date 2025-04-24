@@ -12,10 +12,8 @@ package org.openmrs.module.drools;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.kie.api.KieServices;
-import org.kie.api.builder.KieBuilder;
 import org.kie.api.builder.KieFileSystem;
 import org.kie.api.io.ResourceType;
-import org.kie.api.runtime.KieContainer;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.drools.api.RuleProvider;
 import org.openmrs.module.drools.session.ExternalEvaluator;
@@ -26,6 +24,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Contains module's config.
@@ -43,39 +42,39 @@ public class DroolsConfig {
 	private final String GLOBALS_DRL_PATH = "rules/globals.drl";
 
 	@Bean
-	public KieContainer kieContainer() {
-		ruleProviders = Context.getRegisteredComponents(RuleProvider.class);
-		if (ruleProviders.isEmpty()) {
-			throw new IllegalStateException("No defined RuleProviders");
-		}
+	public KieContainerBuilder kieContainerBuilder() {
+		ruleProviders = Context.getRegisteredComponents(RuleProvider.class).stream().filter(RuleProvider::isEnabled)
+				.collect(Collectors.toList());
+
 		KieServices kieServices = KieServices.Factory.get();
 		KieFileSystem kieFileSystem = kieServices.newKieFileSystem();
 
 		kieFileSystem.write(kieServices.getResources().newClassPathResource(GLOBALS_DRL_PATH)
 				.setResourceType(ResourceType.DRL));
 
+		KieContainerBuilder builder = new KieContainerBuilder(kieServices, kieFileSystem);
+
 		// Load rules
 		for (RuleProvider provider : ruleProviders) {
-			Map<String, ExternalEvaluator> evaluatorMap = provider.getExternalEvaluators();
-			if (evaluatorMap != null) {
-				for (Map.Entry<String, ExternalEvaluator> entry : evaluatorMap.entrySet()) {
-					if (externalEvaluatorManager.supportsEvaluatorWithId(entry.getKey())) {
-						log.warn("External evaluator with id " + entry.getKey() + " already exists. Ignoring.");
-					} else {
-						log.debug("Adding external evaluator with id " + entry.getKey());
-						externalEvaluatorManager.addEvaluator(entry.getKey(), entry.getValue());
-					}
-				}
-			}
-			for (RuleResource resource : provider.getRuleResources()) {
-				kieFileSystem.write(kieServices.getResources().newClassPathResource(resource.getPath())
-						.setResourceType(resource.getResourceType()));
-			}
+			registerProviderExternalEvaluators(provider);
+			provider.getRuleResources().forEach(builder::addResource);
 		}
 
-		// Build the KieContainer
-		KieBuilder kieBuilder = kieServices.newKieBuilder(kieFileSystem).buildAll();
-		return kieServices.newKieContainer(kieBuilder.getKieModule().getReleaseId());
+		return builder;
+	}
+
+	public void registerProviderExternalEvaluators(RuleProvider provider) {
+		Map<String, ExternalEvaluator> evaluatorMap = provider.getExternalEvaluators();
+		if (evaluatorMap != null) {
+			for (Map.Entry<String, ExternalEvaluator> entry : evaluatorMap.entrySet()) {
+				if (externalEvaluatorManager.supportsEvaluatorWithId(entry.getKey())) {
+					log.warn("External evaluator with id " + entry.getKey() + " already exists. Ignoring.");
+				} else {
+					log.debug("Adding external evaluator with id " + entry.getKey());
+					externalEvaluatorManager.addEvaluator(entry.getKey(), entry.getValue());
+				}
+			}
+		}
 	}
 
 	public List<RuleProvider> getRuleProviders() {

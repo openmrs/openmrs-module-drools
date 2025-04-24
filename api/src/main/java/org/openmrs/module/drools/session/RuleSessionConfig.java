@@ -13,6 +13,12 @@ public class RuleSessionConfig {
 
 	private Boolean isStateful;
 
+	/**
+	 * If true, the session will be bootstrapped automatically when the module is
+	 * started.
+	 */
+	private Boolean autoStart;
+
 	private HashMap<String, Object> globals;
 
 	private int initialPoolSize;
@@ -26,11 +32,12 @@ public class RuleSessionConfig {
 		this.globals = new HashMap<>();
 	}
 
-	public RuleSessionConfig(String sessionId, Boolean isStateful, HashMap<String, Object> globals,
+	public RuleSessionConfig(String sessionId, Boolean isStateful, Boolean autoStart, HashMap<String, Object> globals,
 			List<RuleRuntimeEventListener> sessionRuntimeEventListeners,
 			List<DroolsSystemEventListener> systemEventListeners) {
 		this.sessionId = sessionId;
 		this.isStateful = isStateful;
+		this.autoStart = autoStart;
 		this.globals = globals;
 		this.sessionRuntimeEventListeners = sessionRuntimeEventListeners;
 		this.systemEventListeners = systemEventListeners;
@@ -50,6 +57,14 @@ public class RuleSessionConfig {
 
 	public void setStateful(Boolean stateful) {
 		isStateful = stateful;
+	}
+
+	public Boolean getAutoStart() {
+		return autoStart;
+	}
+
+	public void setAutoStart(Boolean autoStart) {
+		this.autoStart = autoStart;
 	}
 
 	public HashMap<String, Object> getGlobals() {

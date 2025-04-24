@@ -7,14 +7,12 @@ import org.kie.api.runtime.KieSession;
 import org.openmrs.event.Event;
 import org.openmrs.module.DaemonToken;
 import org.openmrs.module.drools.session.RuleSessionConfig;
-import org.springframework.stereotype.Component;
 
-@Component
 public class DroolsEventsManager {
 
     private Map<String, List<DroolsSystemEventListener>> activeSubscriptions = new HashMap<>();
 
-    private DaemonToken daemonToken;
+    private static DaemonToken daemonToken;
 
     public DroolsEventsManager() {
     }
@@ -46,11 +44,8 @@ public class DroolsEventsManager {
         }
     }
 
-    public void setDaemonToken(DaemonToken daemonToken) {
-        this.daemonToken = daemonToken;
+    public static void setDaemonToken(DaemonToken token) {
+        daemonToken = token;
     }
 
-    public DaemonToken getDaemonToken() {
-        return daemonToken;
-    }
 }

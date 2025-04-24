@@ -9,15 +9,9 @@
         <artifactId>drools</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <groupId>org.example</groupId>
-    <artifactId>patient-flags</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+    <artifactId>drools-patient-flags</artifactId>
+    <packaging>jar</packaging>
+	<name>OpenMRS Drools Patient Flags API</name>
 
     <dependencies>
         <dependency>
@@ -29,6 +23,11 @@
             <groupId>org.openmrs.module</groupId>
             <artifactId>patientflags-api</artifactId>
             <version>3.0.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openmrs.module</groupId>
+            <artifactId>calculation-api</artifactId>
+            <version>1.3.0</version>
         </dependency>
         <dependency>
             <groupId>org.openmrs.api</groupId>

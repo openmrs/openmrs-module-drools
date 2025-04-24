@@ -6,6 +6,7 @@ import org.kie.api.runtime.ObjectFilter;
 import org.openmrs.OpenmrsObject;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.drools.DroolsConfig;
+import org.openmrs.module.drools.KieContainerBuilder;
 import org.openmrs.module.drools.api.DroolsEngineService;
 import org.openmrs.module.drools.api.RuleProvider;
 import org.openmrs.module.drools.event.DroolsEventsManager;
@@ -14,8 +15,6 @@ import org.openmrs.module.drools.session.RuleSessionConfig;
 import org.openmrs.module.drools.session.SessionPool;
 import org.openmrs.module.drools.session.StatefulSessionRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -23,25 +22,24 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@Component
 public class DroolsEngineServiceImpl extends BaseOpenmrsService implements DroolsEngineService {
 
 	@Autowired
 	private StatefulSessionRegistry sessionRegistry;
 
-	@Autowired
-	private SessionPool sessionPool;
+	private KieContainer kieContainer;
 
 	@Autowired
-	private KieContainer kieContainer;
+	private KieContainerBuilder kieContainerBuilder;
 
 	@Autowired
 	private DroolsConfig droolsConfig;
 
 	private Map<String, RuleSessionConfig> ruleConfigs;
 
-	@Autowired
-	private DroolsEventsManager eventsManager;
+	private SessionPool sessionPool = new SessionPool();
+
+	private DroolsEventsManager eventsManager = new DroolsEventsManager();
 
 	@Override
 	public KieSession requestSession(String sessionId) {
@@ -49,12 +47,15 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 		if (ruleConfigs == null) {
 			ruleConfigs = initializeSessionConfigs();
 		}
+		if (kieContainer == null) {
+			kieContainer = kieContainerBuilder.build();
+		}
 		if (ruleConfigs.get(sessionId) != null) {
 			RuleSessionConfig requestedSessionConfig = ruleConfigs.get(sessionId);
 			if (requestedSessionConfig.getStateful()) {
 				session = sessionRegistry.requestSession(requestedSessionConfig, kieContainer);
 			} else {
-				session = sessionPool.borrowSession(sessionId);
+				session = sessionPool.borrowSession(sessionId, kieContainer);
 			}
 			if (session != null) {
 				eventsManager.subscribeSessionEventListenersIfNecessary(sessionId, session, ruleConfigs);
@@ -117,6 +118,36 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 		return filteredObjects;
 	}
 
+	@Override
+	public void registerRuleProvider(RuleProvider ruleProvider) {
+		if (ruleConfigs == null) {
+			ruleConfigs = initializeSessionConfigs();
+		}
+		// register resources
+		if (ruleProvider.getRuleResources() != null) {
+			ruleProvider.getRuleResources().forEach(kieContainerBuilder::addResource);
+		}
+		// register session configs
+		if (ruleProvider.getSessionConfigs() != null) {
+			ruleProvider.getSessionConfigs().forEach(ruleSessionConfig -> {
+				if (!ruleConfigs.containsKey(ruleSessionConfig.getSessionId())) {
+					ruleConfigs.put(ruleSessionConfig.getSessionId(), ruleSessionConfig);
+				}
+			});
+		}
+
+		// register external evaluators
+		droolsConfig.registerProviderExternalEvaluators(ruleProvider);
+	}
+
+	@Override
+	public List<RuleSessionConfig> getSessionsForAutoStart() {
+		if (ruleConfigs == null) {
+			ruleConfigs = initializeSessionConfigs();
+		}
+		return ruleConfigs.values().stream().filter(RuleSessionConfig::getAutoStart).collect(Collectors.toList());
+	}
+
 	private Map<String, RuleSessionConfig> initializeSessionConfigs() {
 		List<RuleProvider> ruleProviders = droolsConfig.getRuleProviders();
 		return ruleProviders.stream().map(RuleProvider::getSessionConfigs).flatMap(List::stream)
@@ -154,4 +185,5 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 	public void setDroolsConfig(DroolsConfig droolsConfig) {
 		this.droolsConfig = droolsConfig;
 	}
+
 }

@@ -4,6 +4,7 @@ import org.kie.api.runtime.KieSession;
 import org.openmrs.OpenmrsObject;
 import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.drools.session.DroolsSessionException;
+import org.openmrs.module.drools.session.RuleSessionConfig;
 
 import java.util.Collection;
 import java.util.List;
@@ -57,5 +58,18 @@ public interface DroolsEngineService extends OpenmrsService {
 	 * @return KieSession the requested session
 	 */
 	public KieSession requestSession(String sessionId);
+
+	/**
+	 * Manually registers a rule provider and its associated resources into the
+	 * Drools container.
+	 * 
+	 * @param ruleProvider
+	 */
+	public void registerRuleProvider(RuleProvider ruleProvider);
+
+	/**
+	 * Returns all registered session configurations configured for auto-start.
+	 */
+	public List<RuleSessionConfig> getSessionsForAutoStart();
 
 }

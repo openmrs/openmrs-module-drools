@@ -27,10 +27,11 @@ public class CommonUtils {
             try {
                 config.getGlobals().forEach(session::setGlobal);
             } catch (Exception exception) {
-                log.error("Error setting globals", exception);
+                log.error("Error setting globals for session: " + config.getSessionId(), exception);
             }
-
-            config.getSessionRuntimeEventListeners().forEach(session::addEventListener);
+            if (config.getSessionRuntimeEventListeners() != null) {
+                config.getSessionRuntimeEventListeners().forEach(session::addEventListener);
+            }
         }
         session.setGlobal("evaluatorManager", evaluatorManager);
         return session;

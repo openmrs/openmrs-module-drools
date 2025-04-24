@@ -25,14 +25,36 @@
 
     <context:component-scan base-package="org.openmrs.module.drools" />
 
-<!--    <bean name="droolsEngineService" class="org.openmrs.module.drools.api.impl.DroolsEngineServiceImpl"/>-->
+   <bean name="droolsEngineService" class="org.openmrs.module.drools.api.impl.DroolsEngineServiceImpl"/>
 
-<!--    <bean parent="serviceContext">-->
-<!--        <property name="moduleService">-->
-<!--            <list>-->
-<!--                <value>org.openmrs.module.drools.api.DroolsEngineService</value>-->
-<!--                <ref bean="droolsEngineService" />-->
-<!--            </list>-->
-<!--        </property>-->
-<!--    </bean>-->
+   <bean parent="serviceContext">
+       <property name="moduleService">
+            <list>
+               <value>org.openmrs.module.drools.api.DroolsEngineService</value>
+               <ref bean="droolsEngineService" />
+           </list>
+      </property>
+    </bean>
+
+   <bean id="droolsCalculationService" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager"><ref bean="transactionManager"/></property>
+        <property name="target">
+            <bean class="org.openmrs.module.drools.calculation.DroolsCalculationServiceImp"/>
+        </property>
+        <property name="preInterceptors">
+            <ref bean="serviceInterceptors" />
+        </property>
+        <property name="transactionAttributeSource">
+            <bean class="org.springframework.transaction.annotation.AnnotationTransactionAttributeSource"/>
+        </property>
+    </bean>
+
+    <bean parent="serviceContext">
+        <property name="moduleService">
+            <list>
+                <value>org.openmrs.module.drools.calculation.DroolsCalculationService</value>
+                <ref bean="droolsCalculationService"/>
+            </list>
+        </property>
+    </bean>
 </beans>
