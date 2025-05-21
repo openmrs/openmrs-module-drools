@@ -24,4 +24,5 @@ public interface DroolsCalculationService {
     public Boolean hasActiveConditionCoded(Patient patient, String conditionConceptUuid);
 
     public Boolean hasEncounterRecord(Patient patient, String encounterTypeUuid);
+
 }

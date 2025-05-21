@@ -22,22 +22,26 @@ public class CommonUtils {
 
     public static KieSession createKieSession(KieContainer container, RuleSessionConfig config,
             ExternalEvaluatorManager evaluatorManager) {
+        log.debug("Creating new KieSession");
         KieSession session = container.newKieSession();
         if (config != null) {
-            try {
+            if (config.getGlobals() != null) {
+                log.debug("Setting " + config.getGlobals().size() + " globals on KieSession");
                 config.getGlobals().forEach(session::setGlobal);
-            } catch (Exception exception) {
-                log.error("Error setting globals for session: " + config.getSessionId(), exception);
             }
             if (config.getSessionRuntimeEventListeners() != null) {
+                log.debug("Adding " + config.getSessionRuntimeEventListeners().size() + " runtime event listeners to KieSession");
                 config.getSessionRuntimeEventListeners().forEach(session::addEventListener);
             }
+        } else {
+            log.debug("RuleSessionConfig is null; no globals or listeners set");
         }
         session.setGlobal("evaluatorManager", evaluatorManager);
         return session;
     }
 
     public static void removeFactsByClass(KieSession kieSession, Class<?> factClass) {
+        log.debug("Removing facts of type: " + factClass.getName());
         kieSession.getObjects().stream()
                 .filter(factClass::isInstance)
                 .forEach(fact -> kieSession.delete(kieSession.getFactHandle(fact)));

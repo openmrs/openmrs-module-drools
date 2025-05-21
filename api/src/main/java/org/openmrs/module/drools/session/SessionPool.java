@@ -1,10 +1,14 @@
 package org.openmrs.module.drools.session;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.openmrs.module.drools.DroolsConfig;
 import org.openmrs.module.drools.api.RuleProvider;
 import org.openmrs.module.drools.utils.CommonUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
@@ -13,9 +17,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
-// TODO: fix component
+// TODO: Do we need a session pool? If so, re-specify component
+// @Component
 public class SessionPool {
+    private final Log log = LogFactory.getLog(this.getClass());
+
+    // @Autowired
     private DroolsConfig droolsConfig;
+    private boolean isInitialized;
     private final Map<String, Queue<KieSession>> sessionPool = new ConcurrentHashMap<>();
     private final Map<String, ReentrantLock> sessionLocks = new ConcurrentHashMap<>();
     private final Map<String, RuleSessionConfig> sessionConfigs = new ConcurrentHashMap<>();
@@ -23,12 +32,7 @@ public class SessionPool {
     public SessionPool() {
     }
 
-    public SessionPool(DroolsConfig droolsConfig) {
-        this.droolsConfig = droolsConfig;
-        initialize(droolsConfig.getRuleProviders());
-    }
-
-    private void initialize(List<RuleProvider> ruleProviders) {
+    private void initialize(List<RuleProvider> ruleProviders, KieContainer kieContainer) {
         for (RuleProvider provider : ruleProviders) {
             for (RuleSessionConfig config : provider.getSessionConfigs()) {
                 sessionConfigs.put(config.getSessionId(), config);
@@ -36,15 +40,19 @@ public class SessionPool {
                 sessionLocks.put(config.getSessionId(), new ReentrantLock());
 
                 // Pre-warm the pool with initial sessions
-                // for (int i = 0; i < config.getInitialPoolSize(); i++) {
-                // KieSession session = createNewSession(config.getSessionId());
-                // sessionPool.get(config.getSessionId()).add(session);
-                // }
+                 for (int i = 0; i < config.getInitialPoolSize(); i++) {
+                     KieSession session = createNewSession(config.getSessionId(), kieContainer);
+                     sessionPool.get(config.getSessionId()).add(session);
+                 }
             }
         }
+        isInitialized = true;
     }
 
     public KieSession borrowSession(String sessionId, KieContainer kieContainer) {
+        if (!isInitialized) {
+            initialize(droolsConfig.getRuleProviders(), kieContainer);
+        }
         Queue<KieSession> sessions = sessionPool.get(sessionId);
         ReentrantLock lock = sessionLocks.get(sessionId);
 
@@ -65,26 +73,22 @@ public class SessionPool {
         Queue<KieSession> sessions = sessionPool.get(sessionId);
         ReentrantLock lock = sessionLocks.get(sessionId);
 
-        if (session == null) {
-            throw new IllegalArgumentException("Session cannot be null");
+        if (sessions == null || config == null || lock == null) {
+            log.error("Cannot return session. Missing config, pool, or lock for sessionId: " + sessionId);
+            throw new DroolsSessionException("Session configuration not found for sessionId: " + sessionId);
         }
-        if (config != null && sessions != null) {
-            lock.lock();
-            try {
-                // FIXME: should we use stateless sessions by default within the pool?
-                if (config.getStateful()) {
-                    // Reset working memory for stateful sessions
-                    session.dispose();
-                }
-                // Return to pool
-                sessions.add(session);
-            } finally {
-                lock.unlock();
-            }
-        } else {
-            // Dispose if sessionId is invalid
-            session.dispose();
+
+        log.debug("Returning KieSession for sessionId: " + sessionId);
+
+        lock.lock();
+        try {
+            // Clear session state by removing all facts
+            session.getFactHandles().forEach(session::delete);
+            sessions.add(session);
+        } finally {
+            lock.unlock();
         }
+
     }
 
     public void disposeAll() {

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PatientFlagsRuleProvider implements RuleProvider {
 
-    private static final String RULES_PATH = "rules/bp_rules.xlsx";
+    private static final String RULES_PATH = "org/openmrs/module/drools/bp_rules.drl.xlsx";
 
     @Override
     public List<RuleResource> getRuleResources() {

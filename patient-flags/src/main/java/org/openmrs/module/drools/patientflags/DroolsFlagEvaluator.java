@@ -21,9 +21,8 @@ import org.openmrs.module.patientflags.Flag;
 import org.openmrs.module.patientflags.FlagValidationResult;
 import org.openmrs.module.patientflags.evaluator.FlagEvaluator;
 
-// TODO: Handle privilege proxies for non admin users
 public class DroolsFlagEvaluator implements FlagEvaluator {
-    private Log log = LogFactory.getLog(this.getClass());
+    private final Log log = LogFactory.getLog(this.getClass());
 
     @Override
     public Boolean eval(Flag flag, Patient patient, Map<Object, Object> contextMap) {
@@ -71,13 +70,10 @@ public class DroolsFlagEvaluator implements FlagEvaluator {
 
         // Clean up the session
         // TODO: handle this from a "try-catch-finally block"
-        patientFactHandles.forEach(factHandle -> {
-            session.delete(factHandle);
-        });
+        patientFactHandles.forEach(session::delete);
 
         for (FlaggedPatient flagged : flaggedPatients) {
             resultCohort.addMember(flagged.getPatientId());
-
             // Store message in context map if one was provided
             if (flagged.getMessage() != null && !flagged.getMessage().isEmpty()) {
                 if (!contextMap.containsKey(flagged.getPatientId())) {

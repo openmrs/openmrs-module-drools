@@ -15,7 +15,7 @@ import java.util.Map;
 @Component("testRuleProvider")
 public class SimpleRuleProvider implements RuleProvider {
 
-	private static final String DECISION_TABLE_PATH = "decision_tables/bp_rules.xlsx";
+	private static final String DECISION_TABLE_PATH = "decision_tables/bp_rules.drl.xlsx";
 
 	@Autowired
 	private TestCalculationsHelper calculationsHelper;

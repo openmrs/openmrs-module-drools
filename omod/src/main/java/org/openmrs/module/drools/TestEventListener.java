@@ -1,6 +1,7 @@
 package org.openmrs.module.drools;
 
 import java.util.List;
+import java.util.Arrays;
 
 import javax.jms.MapMessage;
 import javax.jms.Message;
@@ -20,7 +21,7 @@ public class TestEventListener extends DroolsSystemEventListener {
 
     @Override
     public List<Event.Action> getSubscribedActions() {
-        return List.of(Event.Action.CREATED, Event.Action.UPDATED);
+        return Arrays.asList(Event.Action.CREATED, Event.Action.UPDATED);
     }
 
     @Override

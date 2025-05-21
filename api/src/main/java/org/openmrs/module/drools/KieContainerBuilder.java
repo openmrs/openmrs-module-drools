@@ -31,7 +31,7 @@ public class KieContainerBuilder {
     public KieContainerBuilder(KieServices kieServices, KieFileSystem kieFileSystem, List<RuleResource> resources) {
         this.kieServices = kieServices;
         this.kieFileSystem = kieFileSystem;
-        this.resources = new HashSet<>(Set.copyOf(resources));
+        this.resources = new HashSet<>(resources);
     }
 
     public KieContainer build() {

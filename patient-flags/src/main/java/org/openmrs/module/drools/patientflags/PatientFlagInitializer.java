@@ -8,7 +8,7 @@ import org.openmrs.module.patientflags.api.FlagService;
 
 public class PatientFlagInitializer {
 
-    private static Log log = LogFactory.getLog(PatientFlagInitializer.class);
+    private static final Log log = LogFactory.getLog(PatientFlagInitializer.class);
 
     public static void initialize() {
         createFlagIfNotExists("High BP", "Blood Pressure");

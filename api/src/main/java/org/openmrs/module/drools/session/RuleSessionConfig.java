@@ -1,6 +1,7 @@
 package org.openmrs.module.drools.session;
 
 import org.kie.api.event.rule.RuleRuntimeEventListener;
+import org.kie.api.runtime.rule.AgendaFilter;
 import org.openmrs.module.drools.event.DroolsSystemEventListener;
 
 import java.util.ArrayList;
@@ -11,17 +12,34 @@ public class RuleSessionConfig {
 
 	private String sessionId;
 
+	/**
+	 * Stateless sessions will be disposed.
+	 */
 	private Boolean isStateful;
 
 	/**
 	 * If true, the session will be bootstrapped automatically when the module is
 	 * started.
+	 *
+	 * Note: Auto started sessions will be disposed when the module stops while on fly sessions will be disposed when the thread ends (finally)
 	 */
 	private Boolean autoStart;
 
 	private HashMap<String, Object> globals;
 
 	private int initialPoolSize;
+
+	/**
+	 * Specifies the agenda group for this session. Agenda groups allow for partitioning rules
+	 * within a single KieBase and controlling their execution in specific sessions.
+	 *<br/>
+	 * Notes: Currently, all resources are stored in the default KieBase, which means all registered sessions
+	 * have access to and can potentially trigger all available rules. Using agenda groups provides a way
+	 * to logically organize rules and control which subset of rules can be activated within a specific session.
+	 */
+	private String agendaGroup;
+
+	private AgendaFilter agendaFilter;
 
 	private List<RuleRuntimeEventListener> sessionRuntimeEventListeners;
 
@@ -65,6 +83,22 @@ public class RuleSessionConfig {
 
 	public void setAutoStart(Boolean autoStart) {
 		this.autoStart = autoStart;
+	}
+
+	public String getAgendaGroup() {
+		return agendaGroup;
+	}
+
+	public void setAgendaGroup(String agendaGroup) {
+		this.agendaGroup = agendaGroup;
+	}
+
+	public AgendaFilter getAgendaFilter() {
+		return agendaFilter;
+	}
+
+	public void setAgendaFilter(AgendaFilter agendaFilter) {
+		this.agendaFilter = agendaFilter;
 	}
 
 	public HashMap<String, Object> getGlobals() {
