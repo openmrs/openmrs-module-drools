@@ -3,11 +3,13 @@ package org.openmrs.module.drools.calculation;
 import java.util.Collections;
 import java.util.HashMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.openmrs.Concept;
 import org.openmrs.EncounterType;
 import org.openmrs.Obs;
 import org.openmrs.Patient;
 import org.openmrs.Program;
+import org.openmrs.api.ConceptService;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.ProgramWorkflowService;
 import org.openmrs.api.context.Context;
@@ -125,13 +127,17 @@ public class DroolsCalculationServiceImp implements DroolsCalculationService {
         return context;
     }
 
-    private Concept getConcept(String conceptUuid) {
-        // TODO: cache concepts
-        Concept concept = Context.getConceptService().getConceptByUuid(conceptUuid);
-        if (concept == null) {
-            throw new IllegalArgumentException("Concept not found for uuid: " + conceptUuid);
+    private Concept getConcept(String conceptUuidOrMapping) {
+        ConceptService conceptService = Context.getConceptService();
+        if (StringUtils.isBlank(conceptUuidOrMapping)) {
+            throw new IllegalArgumentException("Concept ref can't be blank");
         }
-        return concept;
+
+        if (conceptUuidOrMapping.indexOf(":") > 0) {
+            String [] parts = conceptUuidOrMapping.split(":");
+            return conceptService.getConceptByMapping(parts[1], parts[0]);
+        }
+        return conceptService.getConceptByUuid(conceptUuidOrMapping);
     }
 
 }

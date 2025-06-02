@@ -1,4 +1,4 @@
-package org.openmrs.module.drools.patientflags;
+package org.openmrs.module.drools.patientflags.provider;
 
 import java.util.List;
 import java.util.Map;
@@ -11,13 +11,13 @@ import org.openmrs.module.drools.session.RuleSessionConfig;
 import org.springframework.stereotype.Component;
 
 @Component
-public class PatientFlagsRuleProvider implements RuleProvider {
+public class PatientBloodPressureRuleProvider implements RuleProvider {
 
-    private static final String RULES_PATH = "org/openmrs/module/drools/bp_rules.drl.xlsx";
+    private static final String PATH = "org/openmrs/module/drools/bp_rules.drl.xlsx";
 
     @Override
     public List<RuleResource> getRuleResources() {
-        return List.of(new RuleResource("Blood Pressure Rules", RULES_PATH, ResourceType.DTABLE));
+        return List.of(new RuleResource("Blood Pressure Rules", PATH, ResourceType.DTABLE));
     }
 
     @Override
