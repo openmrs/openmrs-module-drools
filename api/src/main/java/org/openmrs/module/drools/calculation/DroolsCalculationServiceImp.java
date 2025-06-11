@@ -3,11 +3,7 @@ package org.openmrs.module.drools.calculation;
 import java.util.Collections;
 import java.util.HashMap;
 
-import org.openmrs.Concept;
-import org.openmrs.EncounterType;
-import org.openmrs.Obs;
-import org.openmrs.Patient;
-import org.openmrs.Program;
+import org.openmrs.*;
 import org.openmrs.api.EncounterService;
 import org.openmrs.api.ProgramWorkflowService;
 import org.openmrs.api.context.Context;
@@ -25,53 +21,25 @@ public class DroolsCalculationServiceImp implements DroolsCalculationService {
     private PatientCalculationContext context;
 
     @Override
-    public Boolean latestNumericObsGreaterOrEqual(Patient patient, String conceptUuid, Double value) {
-        CalculationResult result = getCalculationService().evaluate(patient.getId(), obsCalculation,
-                Collections.singletonMap("concept", getConcept(conceptUuid)), getContext());
-        Double obsValue = (Double) result.getValue();
-        return obsValue != null && obsValue >= value;
-    }
+    public Boolean checkMostRecentObs(Patient patient, String conceptRef, Operator operator, Object value) {
+        Obs obsValue = getLatestObs(patient, conceptRef);
 
-    @Override
-    public Boolean latestNumericObsLessThan(Patient patient, String conceptUuid, Double value) {
-        CalculationResult result = getCalculationService().evaluate(patient.getId(), obsCalculation,
-                Collections.singletonMap("concept", getConcept(conceptUuid)), getContext());
-        Double obsValue = (Double) result.getValue();
-        return obsValue != null && obsValue < value;
-    }
-
-    @Override
-    public Boolean latestNumericObsEqualTo(Patient patient, String conceptUuid, Double value) {
-        CalculationResult result = getCalculationService().evaluate(patient.getId(), obsCalculation,
-                Collections.singletonMap("concept", getConcept(conceptUuid)), getContext());
-        Double obsValue = (Double) result.getValue();
-        return obsValue != null && obsValue == value;
-    }
-
-    @Override
-    public Boolean latestCodedObsEqualTo(Patient patient, String conceptUuid, String valueConceptUuid) {
-        CalculationResult result = getCalculationService().evaluate(patient.getId(), obsCalculation,
-                Collections.singletonMap("concept", getConcept(conceptUuid)), getContext());
-        Concept obsValue = (Concept) result.getValue();
-        return obsValue != null && obsValue.getUuid().equals(valueConceptUuid);
-    }
-
-    @Override
-    public String getLatestObsValueText(Patient patient, String conceptUuid) {
-        CalculationResult result = getCalculationService().evaluate(patient.getId(), obsCalculation,
-                Collections.singletonMap("concept", getConcept(conceptUuid)), getContext());
-        return (String) result.getValue();
+        if (obsValue == null) {
+            return false;
+        }
+        Concept concept = obsValue.getConcept();
+        ConceptDatatypeWrapper datatype = new ConceptDatatypeWrapper(concept.getDatatype());
+        if (!operator.getSupportedDatatypes().contains(datatype.getDatatypeCode())) {
+            throw new IllegalArgumentException("Operator " + operator + " not supported for datatype " + datatype.getDatatype().getName());
+        }
+        Object refinedValue = CalculationUtils.extractObsValue((Obs) obsValue, datatype);
+        return operator.apply(refinedValue, value, datatype);
     }
 
     @Override
     public Obs getLatestObs(Patient patient, String conceptUuid) {
         CalculationResult result = getCalculationService().evaluate(patient.getId(), obsCalculation,
-                new HashMap<String, Object>() {
-                    {
-                        put("concept", getConcept(conceptUuid));
-                        put("returnObsObject", true);
-                    }
-                }, getContext());
+                Collections.singletonMap("concept", CalculationUtils.getConcept(conceptUuid)), getContext());
         return (Obs) result.getValue();
     }
 
@@ -124,14 +92,4 @@ public class DroolsCalculationServiceImp implements DroolsCalculationService {
         }
         return context;
     }
-
-    private Concept getConcept(String conceptUuid) {
-        // TODO: cache concepts
-        Concept concept = Context.getConceptService().getConceptByUuid(conceptUuid);
-        if (concept == null) {
-            throw new IllegalArgumentException("Concept not found for uuid: " + conceptUuid);
-        }
-        return concept;
-    }
-
 }

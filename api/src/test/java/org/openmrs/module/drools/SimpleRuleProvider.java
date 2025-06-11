@@ -2,6 +2,7 @@ package org.openmrs.module.drools;
 
 import org.kie.api.io.ResourceType;
 import org.openmrs.module.drools.api.RuleProvider;
+import org.openmrs.module.drools.calculation.DroolsCalculationService;
 import org.openmrs.module.drools.session.ExternalEvaluator;
 import org.openmrs.module.drools.session.RuleSessionConfig;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,7 @@ public class SimpleRuleProvider implements RuleProvider {
 	private static final String DECISION_TABLE_PATH = "decision_tables/bp_rules.drl.xlsx";
 
 	@Autowired
-	private TestCalculationsHelper calculationsHelper;
+	private DroolsCalculationService calculationService;
 
 	public Boolean isEnabled() {
 		return true;
@@ -33,7 +34,7 @@ public class SimpleRuleProvider implements RuleProvider {
 	@Override
 	public List<RuleSessionConfig> getSessionConfigs() {
 		HashMap<String, Object> globals = new HashMap<>();
-		globals.put("helper", calculationsHelper);
+		globals.put("calcService", calculationService);
 		return Collections.singletonList(new RuleSessionConfig("test1", true, false, globals, Collections.emptyList(),
 				Collections.emptyList()));
 	}

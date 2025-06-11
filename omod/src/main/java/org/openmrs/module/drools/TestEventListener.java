@@ -48,7 +48,7 @@ public class TestEventListener extends DroolsSystemEventListener {
                     log.warn("Patient not found for UUID: " + patientUuid);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e);
             }
         }
     }

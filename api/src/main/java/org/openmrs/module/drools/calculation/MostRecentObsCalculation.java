@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.openmrs.Concept;
-import org.openmrs.ConceptDatatype;
 import org.openmrs.Obs;
 import org.openmrs.Person;
 import org.openmrs.api.context.Context;
@@ -31,9 +30,7 @@ public class MostRecentObsCalculation extends PatientAtATimeCalculation {
     @Override
     public EvaluationInstanceData preprocess(Collection<Integer> cohort, Map<String, Object> params,
             PatientCalculationContext context) {
-
         // TODO: use context cache
-
         PatientObsMap data = new PatientObsMap();
         Concept concept = (Concept) params.get("concept");
         if (concept == null) {
@@ -52,27 +49,7 @@ public class MostRecentObsCalculation extends PatientAtATimeCalculation {
             Map<String, Object> params,
             PatientCalculationContext context) {
         PatientObsMap data = (PatientObsMap) instanceData;
-        CalculationResult r = null;
-        Obs obs = data.get(patientId);
-
-        if ((boolean) params.getOrDefault("returnObsObject", false)) {
-            return new SimpleResult(obs, this);
-        }
-        if (obs != null) {
-            ConceptDatatype datatype = obs.getConcept().getDatatype();
-
-            if (datatype.isCoded() && obs.getValueCoded() != null) {
-                r = new SimpleResult(obs.getValueCoded(), this);
-            } else if (datatype.isText() && obs.getValueText() != null) {
-                r = new SimpleResult(obs.getValueText(), this);
-            } else if (datatype.isNumeric() && obs.getValueNumeric() != null) {
-                r = new SimpleResult(obs.getValueNumeric(), this);
-            } else {
-                // FIXME: Add support for other datatypes
-                throw new UnsupportedOperationException();
-            }
-        }
-        return r;
+        return new SimpleResult(data.get(patientId), this);
 
     }
 
