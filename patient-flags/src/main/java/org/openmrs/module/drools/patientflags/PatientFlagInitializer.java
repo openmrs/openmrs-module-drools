@@ -1,19 +1,20 @@
 package org.openmrs.module.drools.patientflags;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.patientflags.Flag;
 import org.openmrs.module.patientflags.api.FlagService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PatientFlagInitializer {
-
-    private static final Log log = LogFactory.getLog(PatientFlagInitializer.class);
+    private static Logger log = LoggerFactory.getLogger(PatientFlagInitializer.class);
 
     public static void initialize() {
-        createFlagIfNotExists("High BP", "Blood Pressure");
-        createFlagIfNotExists("Critical High BP", "Blood Pressure");
-        createFlagIfNotExists("Low BP", "Blood Pressure");
+        createFlagIfNotExists("Sepsis", "{\n" +
+                "  \"session\": \"Sepsis\",\n" +
+                "  \"rules\": [],\n" +
+                "  \"agendaGroup\": \"sepsis\"\n" +
+                "}");
     }
 
     private static void createFlagIfNotExists(String flagName, String criteria) {

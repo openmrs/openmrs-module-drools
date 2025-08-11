@@ -1,24 +1,26 @@
 package org.openmrs.module.drools.calculation;
 
-import java.util.Collections;
-import java.util.HashMap;
-
 import org.openmrs.*;
 import org.openmrs.api.EncounterService;
+import org.openmrs.api.ObsService;
 import org.openmrs.api.ProgramWorkflowService;
 import org.openmrs.api.context.Context;
-import org.openmrs.calculation.patient.PatientCalculationContext;
-import org.openmrs.calculation.patient.PatientCalculationService;
-import org.openmrs.calculation.result.CalculationResult;
 import org.openmrs.parameter.EncounterSearchCriteria;
+import org.openmrs.util.OpenmrsUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 public class DroolsCalculationServiceImp implements DroolsCalculationService {
 
-    private MostRecentObsCalculation obsCalculation = new MostRecentObsCalculation();
+    @Autowired
+    ObsService obsService;
 
-    private PatientCalculationService calculationService;
-
-    private PatientCalculationContext context;
+    @Autowired
+    ProgramWorkflowService programWorkflowService;
 
     @Override
     public Boolean checkMostRecentObs(Patient patient, String conceptRef, Operator operator, Object value) {
@@ -30,22 +32,73 @@ public class DroolsCalculationServiceImp implements DroolsCalculationService {
         Concept concept = obsValue.getConcept();
         ConceptDatatypeWrapper datatype = new ConceptDatatypeWrapper(concept.getDatatype());
         if (!operator.getSupportedDatatypes().contains(datatype.getDatatypeCode())) {
-            throw new IllegalArgumentException("Operator " + operator + " not supported for datatype " + datatype.getDatatype().getName());
+            throw new IllegalArgumentException(
+                    "Operator " + operator + " not supported for datatype " + datatype.getDatatype().getName());
         }
         Object refinedValue = CalculationUtils.extractObsValue((Obs) obsValue, datatype);
         return operator.apply(refinedValue, value, datatype);
     }
 
     @Override
-    public Obs getLatestObs(Patient patient, String conceptUuid) {
-        CalculationResult result = getCalculationService().evaluate(patient.getId(), obsCalculation,
-                Collections.singletonMap("concept", CalculationUtils.getConcept(conceptUuid)), getContext());
-        return (Obs) result.getValue();
+    public MatchableObsResult checkObs(Patient patient, String conceptRef, Operator dateOperator, Date date) {
+        Date fromDate = null;
+        Date toDate = null;
+        if (dateOperator == null) {
+            dateOperator = Operator.EQUALS;
+        }
+        Concept concept = CalculationUtils.getConcept(conceptRef);
+
+        switch (dateOperator) {
+            case LT:
+                toDate = new Date(date.getTime() - 1);
+                break;
+            case LTE:
+                toDate = OpenmrsUtil.getLastMomentOfDay(date);
+                break;
+            case GT:
+                fromDate = new Date(date.getTime() + 1);
+                break;
+            case GTE:
+                fromDate = OpenmrsUtil.firstSecondOfDay(date);
+                break;
+            case EQUALS:
+                fromDate = OpenmrsUtil.firstSecondOfDay(date);
+                toDate = OpenmrsUtil.getLastMomentOfDay(date);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported date operator: " + dateOperator);
+        }
+
+        List<Obs> obsList = Context.getObsService().getObservations(
+                List.of(patient),
+                null,
+                List.of(concept),
+                null,
+                null,
+                null,
+                List.of("obsDatetime"),
+                1,
+                null,
+                fromDate,
+                toDate,
+                false);
+        return new MatchableObsResult(obsList.isEmpty() ? null : obsList.get(0),
+                new ConceptDatatypeWrapper(concept.getDatatype()));
+    }
+
+    @Override
+    public Obs getLatestObs(Patient patient, String conceptRef) {
+        Concept concept = CalculationUtils.getConcept(conceptRef);
+        List<Obs> obsList = obsService.getObservations(Arrays.asList(patient.getPerson()), null,
+                Arrays.asList(concept), null, null, null, Arrays.asList("obsDatetime"), 1, null, null, null, false);
+        if (obsList.isEmpty()) {
+            return null;
+        }
+        return obsList.get(0);
     }
 
     @Override
     public Boolean isInProgram(Patient patient, String programUuid) {
-        ProgramWorkflowService programWorkflowService = Context.getProgramWorkflowService();
         Program program = programWorkflowService.getProgramByUuid(programUuid);
         if (program == null) {
             throw new IllegalArgumentException("Program not found for uuid: " + programUuid);
@@ -79,17 +132,4 @@ public class DroolsCalculationServiceImp implements DroolsCalculationService {
         return !encounterService.getEncounters(criteria).isEmpty();
     }
 
-    private PatientCalculationService getCalculationService() {
-        if (calculationService == null) {
-            calculationService = Context.getService(PatientCalculationService.class);
-        }
-        return calculationService;
-    }
-
-    private PatientCalculationContext getContext() {
-        if (context == null) {
-            context = getCalculationService().createCalculationContext();
-        }
-        return context;
-    }
 }

@@ -1,8 +1,10 @@
 package org.openmrs.module.drools.api.impl;
 
+import org.apache.commons.lang3.StringUtils;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.ObjectFilter;
+import org.kie.api.runtime.rule.AgendaFilter;
 import org.openmrs.OpenmrsObject;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.drools.DroolsConfig;
@@ -10,15 +12,13 @@ import org.openmrs.module.drools.KieContainerBuilder;
 import org.openmrs.module.drools.api.DroolsEngineService;
 import org.openmrs.module.drools.api.RuleProvider;
 import org.openmrs.module.drools.event.DroolsEventsManager;
+import org.openmrs.module.drools.session.AgendaFilterByNameOrGroup;
 import org.openmrs.module.drools.session.DroolsSessionException;
 import org.openmrs.module.drools.session.RuleSessionConfig;
-import org.openmrs.module.drools.session.SessionPool;
 import org.openmrs.module.drools.session.StatefulSessionRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -37,9 +37,9 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 
 	private Map<String, RuleSessionConfig> ruleConfigs;
 
-	private SessionPool sessionPool = new SessionPool();
-
 	private DroolsEventsManager eventsManager = new DroolsEventsManager();
+
+	private final Map<String, Map <String, Object>> globalBindings = new HashMap<>();
 
 	@Override
 	public KieSession requestSession(String sessionId) {
@@ -52,11 +52,7 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 		}
 		if (ruleConfigs.get(sessionId) != null) {
 			RuleSessionConfig requestedSessionConfig = ruleConfigs.get(sessionId);
-			if (requestedSessionConfig.getStateful()) {
-				session = sessionRegistry.requestSession(requestedSessionConfig, kieContainer);
-			} else {
-				session = sessionPool.borrowSession(sessionId, kieContainer);
-			}
+			session = sessionRegistry.requestSession(requestedSessionConfig, kieContainer, globalBindings);
 			if (session != null) {
 				eventsManager.subscribeSessionEventListenersIfNecessary(sessionId, session, ruleConfigs);
 				return session;
@@ -72,7 +68,15 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 		KieSession currentSession = requestSession(sessionId);
 		if (currentSession != null) {
 			facts.forEach(currentSession::insert);
-			currentSession.fireAllRules();
+			String allowedAgendaGroup = ruleConfigs.get(sessionId).getAgendaGroup();
+			AgendaFilter agendaFilter = ruleConfigs.get(sessionId).getAgendaFilter();
+			if (StringUtils.isNotBlank(allowedAgendaGroup)) {
+				currentSession.getAgenda().getAgendaGroup(allowedAgendaGroup).setFocus();
+				if (agendaFilter == null) {
+					agendaFilter = new AgendaFilterByNameOrGroup(null, allowedAgendaGroup);
+				}
+			}
+			currentSession.fireAllRules(agendaFilter);
 		} else {
 			throw new DroolsSessionException("Could not establish a KIE session of ID: " + sessionId);
 		}
@@ -133,6 +137,9 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 				if (!ruleConfigs.containsKey(ruleSessionConfig.getSessionId())) {
 					ruleConfigs.put(ruleSessionConfig.getSessionId(), ruleSessionConfig);
 				}
+				if (!globalBindings.containsKey(ruleSessionConfig.getSessionId())) {
+					globalBindings.put(ruleSessionConfig.getSessionId(), ruleSessionConfig.getGlobals());
+				}
 			});
 		}
 
@@ -150,8 +157,12 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 
 	private Map<String, RuleSessionConfig> initializeSessionConfigs() {
 		List<RuleProvider> ruleProviders = droolsConfig.getRuleProviders();
-		return ruleProviders.stream().map(RuleProvider::getSessionConfigs).flatMap(List::stream)
+		Map<String, RuleSessionConfig> sessionConfigMap = ruleProviders.stream().map(RuleProvider::getSessionConfigs).flatMap(List::stream)
 				.collect(Collectors.toMap(RuleSessionConfig::getSessionId, ruleSessionConfig -> ruleSessionConfig));
+		sessionConfigMap.forEach((sessionId, config) -> {
+			globalBindings.put(sessionId, config.getGlobals());
+		});
+		return sessionConfigMap;
 	}
 
 	public StatefulSessionRegistry getSessionRegistry() {
@@ -160,14 +171,6 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 
 	public void setSessionRegistry(StatefulSessionRegistry sessionRegistry) {
 		this.sessionRegistry = sessionRegistry;
-	}
-
-	public SessionPool getSessionPool() {
-		return sessionPool;
-	}
-
-	public void setSessionPool(SessionPool sessionPool) {
-		this.sessionPool = sessionPool;
 	}
 
 	public KieContainer getKieContainer() {

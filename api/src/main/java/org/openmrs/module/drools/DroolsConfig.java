@@ -9,8 +9,6 @@
  */
 package org.openmrs.module.drools;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieFileSystem;
 import org.kie.api.io.ResourceType;
@@ -18,6 +16,8 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.drools.api.RuleProvider;
 import org.openmrs.module.drools.session.ExternalEvaluator;
 import org.openmrs.module.drools.session.ExternalEvaluatorManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @Configuration
 public class DroolsConfig {
 
-	Log log = LogFactory.getLog(DroolsConfig.class);
+	private Logger log = LoggerFactory.getLogger(this.getClass());
 
 	private List<RuleProvider> ruleProviders;
 

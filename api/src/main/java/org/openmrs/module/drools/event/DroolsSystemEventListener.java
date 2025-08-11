@@ -4,17 +4,17 @@ import java.util.List;
 
 import javax.jms.Message;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.kie.api.runtime.KieSession;
 import org.openmrs.api.context.Daemon;
 import org.openmrs.event.Event;
 import org.openmrs.event.EventListener;
 import org.openmrs.module.DaemonToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class DroolsSystemEventListener implements EventListener {
 
-    private Log log = LogFactory.getLog(this.getClass());
+    private Logger log = LoggerFactory.getLogger(this.getClass());
 
     private DaemonToken daemonToken;
 

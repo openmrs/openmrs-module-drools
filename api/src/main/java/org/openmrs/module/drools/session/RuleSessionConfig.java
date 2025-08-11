@@ -13,11 +13,6 @@ public class RuleSessionConfig {
 	private String sessionId;
 
 	/**
-	 * Stateless sessions will be disposed.
-	 */
-	private Boolean isStateful;
-
-	/**
 	 * If true, the session will be bootstrapped automatically when the module is
 	 * started.
 	 *
@@ -50,11 +45,10 @@ public class RuleSessionConfig {
 		this.globals = new HashMap<>();
 	}
 
-	public RuleSessionConfig(String sessionId, Boolean isStateful, Boolean autoStart, HashMap<String, Object> globals,
+	public RuleSessionConfig(String sessionId, Boolean autoStart, HashMap<String, Object> globals,
 			List<RuleRuntimeEventListener> sessionRuntimeEventListeners,
 			List<DroolsSystemEventListener> systemEventListeners) {
 		this.sessionId = sessionId;
-		this.isStateful = isStateful;
 		this.autoStart = autoStart;
 		this.globals = globals;
 		this.sessionRuntimeEventListeners = sessionRuntimeEventListeners;
@@ -67,14 +61,6 @@ public class RuleSessionConfig {
 
 	public void setSessionId(String sessionId) {
 		this.sessionId = sessionId;
-	}
-
-	public Boolean getStateful() {
-		return isStateful;
-	}
-
-	public void setStateful(Boolean stateful) {
-		isStateful = stateful;
 	}
 
 	public Boolean getAutoStart() {

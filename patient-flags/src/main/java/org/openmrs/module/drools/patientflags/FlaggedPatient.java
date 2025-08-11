@@ -16,4 +16,12 @@ public class FlaggedPatient {
     public String getMessage() {
         return message;
     }
+
+    public void setPatientId(Integer patientId) {
+        this.patientId = patientId;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
 }

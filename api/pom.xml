@@ -69,9 +69,5 @@
 			<groupId>org.openmrs</groupId>
 			<artifactId>event-api</artifactId>
 		</dependency>
-		<dependency>
-            <groupId>org.openmrs.module</groupId>
-            <artifactId>calculation-api</artifactId>
-        </dependency>
     </dependencies>
 </project>

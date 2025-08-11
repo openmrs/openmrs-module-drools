@@ -1,18 +1,18 @@
 package org.openmrs.module.drools;
 
+import org.kie.api.KieServices;
+import org.kie.api.builder.KieFileSystem;
+import org.kie.api.runtime.KieContainer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.kie.api.KieServices;
-import org.kie.api.builder.KieFileSystem;
-import org.kie.api.runtime.KieContainer;
-
 public class KieContainerBuilder {
 
-    Log log = LogFactory.getLog(KieContainerBuilder.class);
+    private Logger log = LoggerFactory.getLogger(this.getClass());
 
     private KieServices kieServices;
 

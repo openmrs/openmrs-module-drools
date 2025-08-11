@@ -23,7 +23,6 @@ public class OperandsBuilder {
     public Operands prepareOperands() {
         Object refinedLeft = originalLeft;
         Object refinedRight = CalculationUtils.refineRhsOperand(originalRight, datatype);
-        System.out.println("original right: " + originalRight);
         if (datatype.isTime() && originalLeft instanceof Date) {
             refinedLeft = DroolsDateUtils.toLocalTime((Date) originalLeft);
         }

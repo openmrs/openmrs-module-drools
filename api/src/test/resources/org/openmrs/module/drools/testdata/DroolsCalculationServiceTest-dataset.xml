@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<dataset>
+    <concept concept_id="1001" retired="false" datatype_id="1" class_id="1" is_set="false"
+             creator="1" date_created="2005-01-01 00:00:00.0" uuid="2959ed5e-09f3-4b42-87a0-6efc9428e830"/>
+    <concept_numeric concept_id="1001" hi_absolute="100.0" low_absolute="0.0" allow_decimal="true"/>
+
+    <obs obs_id="2001" person_id="1" concept_id="1001" status="FINAL" obs_datetime="2023-12-31 23:59:00"
+         location_id="1" value_numeric="3.0" creator="1" date_created="2024-01-01 00:00:00" voided="false"
+         uuid="20f43b47-83c2-4519-82ab-5af780f399ba"/>
+    <obs obs_id="2004" person_id="1" concept_id="1001" status="FINAL" obs_datetime="2023-06-31 23:59:00"
+         location_id="1" value_numeric="4.0" creator="1" date_created="2024-01-01 00:00:00" voided="false"
+         uuid="c2d4580a-1de7-4ab4-a4a5-cc92629f2383"/>
+    <obs obs_id="2002" person_id="1" concept_id="1001" status="FINAL" obs_datetime="2024-01-01 00:00:00"
+         location_id="1" value_numeric="5.0" creator="1" date_created="2024-01-01 00:00:00" voided="false"
+         uuid="1ba1e5a0-84a8-45a4-96a1-320ce53e2d8d"/>
+    <obs obs_id="2003" person_id="1" concept_id="1001" status="FINAL" obs_datetime="2024-01-02 00:00:00"
+         location_id="1" value_numeric="7.0" creator="1" date_created="2024-01-02 00:00:00" voided="false"
+         uuid="9fc972fc-b409-402b-bf6d-5e211465861a"/>
+</dataset>

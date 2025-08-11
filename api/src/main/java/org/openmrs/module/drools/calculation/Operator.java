@@ -1,5 +1,6 @@
 package org.openmrs.module.drools.calculation;
 
+import org.apache.commons.lang3.StringUtils;
 import org.openmrs.ConceptDatatype;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -11,10 +12,12 @@ public enum Operator {
     /**
      * Equals
      */
-    EQUALS(Set.of(ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME, ConceptDatatype.BOOLEAN, ConceptDatatype.CODED, ConceptDatatype.NUMERIC)) {
+    EQUALS(Set.of(ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME, ConceptDatatype.BOOLEAN,
+            ConceptDatatype.CODED, ConceptDatatype.NUMERIC)) {
         @Autowired
         public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
-            OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype()).prepareOperands();
+            OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype())
+                    .prepareOperands();
             Comparator<Object> comparator = DatatypeComparatorRegistry.getComparator(datatype.getDatatypeCode());
             if (comparator != null) {
                 return comparator.compare(operands.getLeft(), operands.getRight()) == 0;
@@ -29,7 +32,8 @@ public enum Operator {
     LT(Set.of(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME)) {
         @Autowired
         public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
-            OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype()).prepareOperands();
+            OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype())
+                    .prepareOperands();
             Comparator<Object> comparator = DatatypeComparatorRegistry.getComparator(datatype.getDatatypeCode());
             if (comparator != null) {
                 return comparator.compare(operands.getLeft(), operands.getRight()) < 0;
@@ -44,7 +48,8 @@ public enum Operator {
     GT(Set.of(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME)) {
         @Autowired
         public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
-            OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype()).prepareOperands();
+            OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype())
+                    .prepareOperands();
             Comparator<Object> comparator = DatatypeComparatorRegistry.getComparator(datatype.getDatatypeCode());
             if (comparator != null) {
                 return comparator.compare(operands.getLeft(), operands.getRight()) > 0;
@@ -59,11 +64,12 @@ public enum Operator {
     LTE(Set.of(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME)) {
         @Autowired
         public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
-            OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype()).prepareOperands();
+            OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype())
+                    .prepareOperands();
             Comparator<Object> comparator = DatatypeComparatorRegistry.getComparator(datatype.getDatatypeCode());
             if (comparator != null) {
-                 int result = comparator.compare(operands.getLeft(), operands.getRight());
-                 return result < 0 || result == 0;
+                int result = comparator.compare(operands.getLeft(), operands.getRight());
+                return result < 0 || result == 0;
             } else {
                 throw new IllegalStateException("Failed to resolve Comparator");
             }
@@ -75,7 +81,8 @@ public enum Operator {
     GTE(Set.of(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME)) {
         @Autowired
         public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
-            OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype()).prepareOperands();
+            OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype())
+                    .prepareOperands();
             Comparator<Object> comparator = DatatypeComparatorRegistry.getComparator(datatype.getDatatypeCode());
             if (comparator != null) {
                 int result = comparator.compare(operands.getLeft(), operands.getRight());
@@ -83,6 +90,46 @@ public enum Operator {
             } else {
                 throw new IllegalStateException("Failed to resolve Comparator");
             }
+        }
+    },
+
+    /**
+     * Checks if a given obs value exists -- Applicable to all obs
+     */
+    EXISTS(Set.of(ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME, ConceptDatatype.BOOLEAN,
+            ConceptDatatype.CODED, ConceptDatatype.NUMERIC)) {
+        @Autowired
+        public boolean apply(Object left, Object ignored, ConceptDatatypeWrapper datatype) {
+            if (left == null) {
+                return false;
+            }
+            if (left instanceof String) {
+                return StringUtils.isNotBlank((String) left);
+            }
+            return true;
+        }
+    },
+
+    /**
+     * Applicable to numerics and dates
+     */
+    BETWEEN(Set.of(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME)) {
+        // TODO: Add implementation
+        @Autowired
+        public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
+            throw new UnsupportedOperationException("Unimplemented operator \"BETWEEN\"");
+        }
+    },
+
+    /**
+     * Applicable to numerics, coded. Example usage:
+     * {@code checkLatestObs(patient, "CIEL:123", Operator.IN,  value1, value2, value3)})
+     */
+    IN(Set.of(ConceptDatatype.NUMERIC, ConceptDatatype.CODED)) {
+        // TODO: Add implementation
+        @Autowired
+        public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
+            throw new UnsupportedOperationException("Unimplemented operator \"IN\"");
         }
     };
 
@@ -99,8 +146,8 @@ public enum Operator {
     /**
      * Applies this operator to the given operands.
      *
-     * @param left  the left-hand operand (e.g., obs value)
-     * @param right the right-hand operand (e.g., comparison value)
+     * @param left     the left-hand operand (e.g., obs value)
+     * @param right    the right-hand operand (e.g., comparison value)
      * @param datatype the concept datatype
      * @return true if the comparison holds; false otherwise
      */

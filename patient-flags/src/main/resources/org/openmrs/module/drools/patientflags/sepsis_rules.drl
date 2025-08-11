@@ -1,0 +1,72 @@
+package org.openmrs.module.drools.patientflags
+
+import java.util.List;
+import org.openmrs.Patient;
+import org.openmrs.module.drools.patientflags.FlaggedPatient;
+import org.openmrs.module.drools.calculation.Operator;
+import org.openmrs.module.drools.calculation.DroolsCalculationService;
+
+global  DroolsCalculationService calculationService;
+global  List<FlaggedPatient> flaggedPatients;
+
+function boolean isTemperatureAbnormal(Patient patient, DroolsCalculationService service) {
+    return service.checkMostRecentObs(patient, "CIEL:5088", Operator.GT, 38.0) ||
+               service.checkMostRecentObs(patient, "CIEL:5088", Operator.LT, 36.0);
+}
+
+function boolean isPulseElevated(Patient patient, DroolsCalculationService service) {
+    return service.checkMostRecentObs(patient, "CIEL:5087", Operator.GT, 90);
+}
+
+function boolean isRespiratoryRateElevated(Patient patient, DroolsCalculationService service) {
+    return service.checkMostRecentObs(patient, "CIEL:5242", Operator.GT, 20);
+}
+
+function boolean meetsSepsisWarningCriteria(Patient patient, DroolsCalculationService service) {
+    boolean tempAbnormal = isTemperatureAbnormal(patient, service);
+    boolean pulseHigh = isPulseElevated(patient, service);
+    boolean rrHigh = isRespiratoryRateElevated(patient, service);
+
+    // Must meet at least 2 of the 3 criteria combinations
+    return (tempAbnormal && pulseHigh && rrHigh) ||  // All three
+           (tempAbnormal && pulseHigh) ||            // Temp + Pulse
+           (tempAbnormal && rrHigh) ||               // Temp + RR
+           (pulseHigh && rrHigh);                    // Pulse + RR
+}
+
+// criteria for a sepsis warning:
+// age > 18 (Applies for all)
+// temperature > 38 OR temperature <36 AND pulse > 90 AND RR > 20
+// temperature > 38 OR temperature <36 AND pulse > 90
+// temperature > 38 OR temperature <36 AND RR > 20
+// pulse > 90 AND RR > 20
+rule "Sepsis Warning"
+agenda-group "sepsis"
+    when
+        $patient : Patient(age > 18)
+        eval(meetsSepsisWarningCriteria($patient, calculationService))
+    then
+        insertLogical(new FlaggedPatient($patient.getId(), "Sepsis Warning"));
+end
+
+rule "Sepsis Severe"
+agenda-group "sepsis"
+    when
+        $patient: Patient(age > 18)
+         $flag: FlaggedPatient(patientId == $patient.getId(), message == "Sepsis Warning")
+        eval(calculationService.checkMostRecentObs($patient, "CIEL:5085", Operator.LT, 90))
+    then
+        modify($flag){
+            setMessage("Severe Sepsis")
+        }
+end
+
+rule "Add to Flagged List"
+agenda-group "sepsis"
+    when
+        $flag : FlaggedPatient()
+        eval(!flaggedPatients.contains($flag))
+    then
+        flaggedPatients.add($flag);
+        System.out.println("Added to flagged patients list: " + $flag.getMessage());
+end

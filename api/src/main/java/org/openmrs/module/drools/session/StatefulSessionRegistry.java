@@ -46,16 +46,17 @@ public class StatefulSessionRegistry {
      * 
      * @param config       the configuration for the session
      * @param kieContainer the KIE container to use for creating a new session
+     * @param globalBindings all session(s) globals
      * @return KieSession the existing or newly created Drools session
      * @throws DroolsSessionException if the session configuration is invalid or the
      *                                session could not be created
      */
-    public KieSession requestSession(RuleSessionConfig config, KieContainer kieContainer) {
+    public KieSession requestSession(RuleSessionConfig config, KieContainer kieContainer, Map<String, Map <String, Object>> globalBindings) {
         KieSession session = sessions.get(config.getSessionId());
         if (session != null) {
             return session;
         }
-        session = CommonUtils.createKieSession(kieContainer, config, droolsConfig.getExternalEvaluatorManager());
+        session = CommonUtils.createKieSession(kieContainer, config, droolsConfig.getExternalEvaluatorManager(), globalBindings);
 
         sessions.put(config.getSessionId(), session);
         return session;

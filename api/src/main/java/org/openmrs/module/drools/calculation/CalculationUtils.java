@@ -1,6 +1,7 @@
 package org.openmrs.module.drools.calculation;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.openmrs.Concept;
 import org.openmrs.ConceptDatatype;
 import org.openmrs.Obs;
@@ -40,17 +41,26 @@ public class CalculationUtils {
         return operand;
     }
 
-    public static Concept getConcept(String conceptUuidOrMapping) {
+    public static Concept getConcept(String conceptRef) {
         ConceptService conceptService = Context.getConceptService();
-        if (StringUtils.isBlank(conceptUuidOrMapping)) {
+        if (StringUtils.isBlank(conceptRef)) {
             throw new IllegalArgumentException("Concept ref can't be blank");
         }
-
-        if (conceptUuidOrMapping.indexOf(":") > 0) {
-            String [] parts = conceptUuidOrMapping.split(":");
+        // handle mapping
+        if (conceptRef.indexOf(":") > 0) {
+            String [] parts = conceptRef.split(":");
             return conceptService.getConceptByMapping(parts[1], parts[0]);
         }
-        return conceptService.getConceptByUuid(conceptUuidOrMapping);
+        // handle id
+        int conceptId = NumberUtils.toInt(conceptRef, -1);
+        if (conceptId >= 0) {
+            Concept cpt = conceptService.getConcept(conceptId);
+            if (cpt != null) {
+                return cpt;
+            }
+        }
+        // handle uuid
+        return conceptService.getConceptByUuid(conceptRef);
     }
 
     public static Object extractObsValue(Obs obs, ConceptDatatypeWrapper datatype){

@@ -46,7 +46,7 @@ public class DroolsEngineServiceTest extends BaseModuleContextSensitiveTest {
 		patientService = Context.getPatientService();
 		obsService = Context.getObsService();
 		conceptService = Context.getConceptService();
-		executeDataSet("org/openmrs/module/drools/testdata/droolstest-dataset.xml");
+		executeDataSet("org/openmrs/module/drools/testdata/DroolsServiceTest-dataset.xml");
 	}
 
 	@Test

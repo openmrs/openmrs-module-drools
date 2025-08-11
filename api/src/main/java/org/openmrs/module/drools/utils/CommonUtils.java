@@ -1,30 +1,32 @@
 package org.openmrs.module.drools.utils;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.InputStream;
-import java.io.IOException;
-import java.util.Objects;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.drools.decisiontable.InputType;
 import org.drools.decisiontable.SpreadsheetCompiler;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.openmrs.module.drools.session.ExternalEvaluatorManager;
 import org.openmrs.module.drools.session.RuleSessionConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.util.Map;
+import java.util.Objects;
 
 public class CommonUtils {
 
-    private static final Log log = LogFactory.getLog(CommonUtils.class);
+    private static Logger log = LoggerFactory.getLogger(CommonUtils.class);
 
     public static KieSession createKieSession(KieContainer container, RuleSessionConfig config,
-            ExternalEvaluatorManager evaluatorManager) {
+            ExternalEvaluatorManager evaluatorManager, Map<String, Map<String, Object>> globalBindings) {
         log.debug("Creating new KieSession");
         KieSession session = container.newKieSession();
         if (config != null) {
+            globalBindings.forEach((sessionId, globals) -> {
+                if (!sessionId.equals(config.getSessionId())) {
+                    globals.forEach(session::setGlobal);
+                }
+            });
             if (config.getGlobals() != null) {
                 log.debug("Setting " + config.getGlobals().size() + " globals on KieSession");
                 config.getGlobals().forEach(session::setGlobal);
@@ -60,16 +62,27 @@ public class CommonUtils {
         Objects.requireNonNull(excelFilePath, "Excel file path cannot be null");
         Objects.requireNonNull(outputDrlPath, "Output DRL path cannot be null");
 
-        try (InputStream excelInputStream = new FileInputStream(excelFilePath);
-                FileWriter drlFileWriter = new FileWriter(outputDrlPath)) {
+        InputStream excelInputStream = null;
+
+        try {
+            // Try loading from file system first
+            excelInputStream = new FileInputStream(excelFilePath);
+        } catch (FileNotFoundException fileEx) {
+            // If not found, try loading from classpath
+            excelInputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(excelFilePath);
+
+            if (excelInputStream == null) {
+                throw new IOException("Excel file not found in filesystem or classpath: " + excelFilePath, fileEx);
+            }
+
+        }
+
+        try (FileWriter drlFileWriter = new FileWriter(outputDrlPath)) {
 
             SpreadsheetCompiler spreadsheetCompiler = new SpreadsheetCompiler();
-
-            // Compile the excel file to generate DRL content
             String drlContent = spreadsheetCompiler.compile(excelInputStream, InputType.XLS);
             drlFileWriter.write(drlContent);
-        } catch (FileNotFoundException e) {
-            throw new IOException("Excel file not found: " + excelFilePath, e);
         }
+
     }
 }

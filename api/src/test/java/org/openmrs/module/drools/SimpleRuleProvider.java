@@ -35,7 +35,7 @@ public class SimpleRuleProvider implements RuleProvider {
 	public List<RuleSessionConfig> getSessionConfigs() {
 		HashMap<String, Object> globals = new HashMap<>();
 		globals.put("calcService", calculationService);
-		return Collections.singletonList(new RuleSessionConfig("test1", true, false, globals, Collections.emptyList(),
+		return Collections.singletonList(new RuleSessionConfig("test1", true, globals, Collections.emptyList(),
 				Collections.emptyList()));
 	}
 
