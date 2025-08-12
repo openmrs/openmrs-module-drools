@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
         "org.xml.*",
         "org.w3c.*",
         "org.apache.xerces.*",
+        "com.sun.org.apache.xerces.*",
         "org.slf4j.*",
         "org.apache.logging.*"
 })

@@ -43,6 +43,11 @@ public class DroolsConfig {
 
 	@Bean
 	public KieContainerBuilder kieContainerBuilder() {
+		// Apache POI (used by Drools decision tables) relies on the Xerces XML parser from the JDK.
+		// However, OpenMRS core pulls in a third party Xerces variant (xercesImpl) which has different parser
+		// configuration classes. When both are on the classpath, the JVM may pick the wrong one,
+		// causing XML parsing errors at runtime. An alternative solution could be using an uber-jar.
+		System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl");
 		ruleProviders = Context.getRegisteredComponents(RuleProvider.class).stream().filter(RuleProvider::isEnabled)
 				.collect(Collectors.toList());
 

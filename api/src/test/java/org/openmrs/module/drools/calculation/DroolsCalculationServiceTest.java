@@ -13,15 +13,11 @@ import java.util.Date;
 import static org.junit.Assert.*;
 import static org.openmrs.module.drools.utils.DroolsDateUtils.weeksAgo;
 
-// TODO: Use org.openmrs.test.jupiter.BaseModuleContextSensitiveTest as base class instead
 public class DroolsCalculationServiceTest extends BaseModuleContextSensitiveTest {
     private static final String TEST_OBS_XML = "org/openmrs/module/drools/testdata/DroolsCalculationServiceTest-dataset.xml";
 
     @Autowired
     private DroolsCalculationService calculationService;
-
-    @Autowired
-    private ConceptService conceptService;
 
     private Patient patient;
     private String conceptRef;
