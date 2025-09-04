@@ -4,12 +4,18 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.openmrs.api.context.Context;
 
 import java.text.ParseException;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
 
 public class DroolsDateUtils {
+
+    public enum Granularity {
+        DAYS, WEEKS, MONTHS, YEARS
+    }
 
     /**
      * Parses a date string using standard 'yyyy-MM-dd hh:mm:ss' format
@@ -41,6 +47,17 @@ public class DroolsDateUtils {
         return date.toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalTime();
+    }
+
+    /**
+     * Converts a java.util.Date to java.time.LocalDate
+     * @param date the Date to convert
+     */
+    public static LocalDate toLocalDate(Date date) {
+        if (date == null) {
+            throw new IllegalArgumentException("Date must not be null");
+        }
+        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     }
 
     public static LocalTime parseTime(String timeStr) {
@@ -99,6 +116,40 @@ public class DroolsDateUtils {
      */
     public static Date daysFromNow(int days) {
         return shift(Calendar.DAY_OF_YEAR, days);
+    }
+
+    /**
+     * Checks if the difference between start and end is >= threshold in given granularity.
+     *
+     * @param start the start date
+     * @param end the end date
+     * @param threshold the threshold
+     * @param granularity the granularity
+     */
+    public static Boolean isAtLeast(Date start, Date end, long threshold, Granularity granularity) {
+        if (start == null || end == null || granularity == null) {
+            return false;
+        }
+        long diff;
+        LocalDate localStartDate = toLocalDate(start);
+        LocalDate localEndDate = toLocalDate(end);
+        switch (granularity) {
+            case DAYS:
+                diff = ChronoUnit.DAYS.between(localStartDate, localEndDate);
+                break;
+            case WEEKS:
+                diff = ChronoUnit.WEEKS.between(localStartDate, localEndDate);
+                break;
+            case MONTHS:
+                diff = ChronoUnit.MONTHS.between(localStartDate, localEndDate);
+                break;
+            case YEARS:
+                diff = ChronoUnit.YEARS.between(localStartDate, localEndDate);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported granularity: " + granularity);
+        }
+        return diff >= threshold;
     }
 
     /**

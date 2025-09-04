@@ -1,0 +1,59 @@
+package org.openmrs.module.drools.forms;
+//generated from Decision Table
+import java.util.Date;
+import org.openmrs.Patient;
+import org.openmrs.Form;
+import org.openmrs.module.drools.calculation.Operator;
+import org.openmrs.api.context.Context;
+import static org.openmrs.module.drools.utils.DroolsDateUtils.monthsAgo;
+import static org.openmrs.module.drools.utils.DroolsDateUtils.isAtLeast;
+import static org.openmrs.module.drools.utils.DroolsDateUtils.now;
+import org.openmrs.module.drools.utils.DroolsDateUtils.Granularity;
+global org.openmrs.module.drools.calculation.DroolsCalculationService service;
+	no-loop true
+	agenda-group "forms"
+// rule values at A13, header at A8
+rule "Recommend ANC Intake"
+	when
+		$patient: Patient(age >= 14 && age < 50, gender == "F", !service.hasEncounter($patient, "ANC Enrolment",monthsAgo(10), null))
+		not Form(uuid == "fe68f7f9-f81b-4626-a35f-04dec53e8397")
+	then
+		insert(Context.getFormService().getFormByUuid("fe68f7f9-f81b-4626-a35f-04dec53e8397"));
+end
+
+// rule values at A14, header at A8
+rule "Recommend ANC Followup"
+	when
+		$patient: Patient(age >= 14 && age < 50, gender == "F", service.hasEncounter($patient, "ANC Enrolment",monthsAgo(10), null), !service.hasEncounter($patient, "ANC Followup",monthsAgo(10), null), !service.hasEncounter($patient, "Labour and Delivery",monthsAgo(2), null))
+		not Form(uuid == "94c20155-2baf-440d-a1ca-ddbb54ccc652")
+	then
+		insert(Context.getFormService().getFormByUuid("94c20155-2baf-440d-a1ca-ddbb54ccc652"));
+end
+
+// rule values at A15, header at A8
+rule "Recommend Labour & Delivery 1"
+	when
+		$patient: Patient(age >= 14 && age < 50, gender == "F", !service.hasEncounter($patient, "Labour and Delivery",monthsAgo(2), null), isAtLeast((Date)service.checkObs($patient, "CIEL:1427", Operator.GT, monthsAgo(10)).getValue(), now(), 37, Granularity.WEEKS))
+		not Form(uuid == "5e268719-05fe-4c99-8977-f969d8cb1f26")
+	then
+		insert(Context.getFormService().getFormByUuid("5e268719-05fe-4c99-8977-f969d8cb1f26"));
+end
+
+// rule values at A16, header at A8
+rule "Recommend Labour & Delivery 2"
+	when
+		$patient: Patient(age >= 14 && age < 50, gender == "F", !service.hasEncounter($patient, "Labour and Delivery",monthsAgo(2), null), service.checkObs($patient, "cd7ec9cb-652d-4bec-a002-0619972ddd10", Operator.LT, monthsAgo(10)).matches(Operator.GTE, 36))
+		not Form(uuid == "5e268719-05fe-4c99-8977-f969d8cb1f26")
+	then
+		insert(Context.getFormService().getFormByUuid("5e268719-05fe-4c99-8977-f969d8cb1f26"));
+end
+
+// rule values at A17, header at A8
+rule "Recommend PNC Visit"
+	when
+		$patient: Patient(age >= 14 && age < 50, gender == "F", service.hasEncounter($patient, "Labour and Delivery",monthsAgo(2), null))
+		not Form(uuid == "65d47896-7d68-4d11-b42b-c779b3008c9a")
+	then
+		insert(Context.getFormService().getFormByUuid("65d47896-7d68-4d11-b42b-c779b3008c9a"));
+end
+

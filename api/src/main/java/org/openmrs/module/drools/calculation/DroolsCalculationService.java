@@ -75,4 +75,6 @@ public interface DroolsCalculationService {
 
     public Boolean hasEncounterRecord(Patient patient, String encounterTypeUuid);
 
+    public Boolean hasEncounter(Patient patient, String encounterTypeUuid, Date from, Date to);
+
 }

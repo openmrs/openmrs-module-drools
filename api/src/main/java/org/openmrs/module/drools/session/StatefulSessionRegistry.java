@@ -29,7 +29,7 @@ public class StatefulSessionRegistry {
      * @return KieSession the requested Drools session
      * @throws DroolsSessionException if the session with the specified ID does not
      *                                exist
-     * @see #requestSession(RuleSessionConfig, KieContainer) for creating a new
+     * @see #requestSession(DroolsSessionConfig, KieContainer) for creating a new
      *      session
      */
     public KieSession getSession(String sessionId) {
@@ -51,7 +51,7 @@ public class StatefulSessionRegistry {
      * @throws DroolsSessionException if the session configuration is invalid or the
      *                                session could not be created
      */
-    public KieSession requestSession(RuleSessionConfig config, KieContainer kieContainer, Map<String, Map <String, Object>> globalBindings) {
+    public KieSession requestSession(DroolsSessionConfig config, KieContainer kieContainer, Map<String, Map <String, Object>> globalBindings) {
         KieSession session = sessions.get(config.getSessionId());
         if (session != null) {
             return session;

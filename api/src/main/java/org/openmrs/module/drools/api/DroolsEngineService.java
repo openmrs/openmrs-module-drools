@@ -3,8 +3,9 @@ package org.openmrs.module.drools.api;
 import org.kie.api.runtime.KieSession;
 import org.openmrs.OpenmrsObject;
 import org.openmrs.api.OpenmrsService;
+import org.openmrs.module.drools.session.DroolsExecutionResult;
 import org.openmrs.module.drools.session.DroolsSessionException;
-import org.openmrs.module.drools.session.RuleSessionConfig;
+import org.openmrs.module.drools.session.DroolsSessionConfig;
 
 import java.util.Collection;
 import java.util.List;
@@ -24,6 +25,8 @@ public interface DroolsEngineService extends OpenmrsService {
 	 *                                session configuration is missing or invalid
 	 */
 	public KieSession evaluate(String sessionId, Collection<? extends OpenmrsObject> facts);
+
+	public DroolsExecutionResult evaluate(String sessionId, Collection<Object> facts, Class<?> resultClazz);
 
 	/**
 	 * Retrieves a collection of facts of the specified type from a Drools session.
@@ -70,6 +73,8 @@ public interface DroolsEngineService extends OpenmrsService {
 	/**
 	 * Returns all registered session configurations configured for auto-start.
 	 */
-	public List<RuleSessionConfig> getSessionsForAutoStart();
+	public List<DroolsSessionConfig> getSessionsForAutoStart();
+
+	public DroolsSessionConfig getSessionConfig(String sessionId);
 
 }

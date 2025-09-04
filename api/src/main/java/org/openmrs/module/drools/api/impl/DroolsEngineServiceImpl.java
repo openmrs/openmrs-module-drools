@@ -5,6 +5,7 @@ import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.ObjectFilter;
 import org.kie.api.runtime.rule.AgendaFilter;
+import org.kie.api.runtime.rule.FactHandle;
 import org.openmrs.OpenmrsObject;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.drools.DroolsConfig;
@@ -12,10 +13,7 @@ import org.openmrs.module.drools.KieContainerBuilder;
 import org.openmrs.module.drools.api.DroolsEngineService;
 import org.openmrs.module.drools.api.RuleProvider;
 import org.openmrs.module.drools.event.DroolsEventsManager;
-import org.openmrs.module.drools.session.AgendaFilterByNameOrGroup;
-import org.openmrs.module.drools.session.DroolsSessionException;
-import org.openmrs.module.drools.session.RuleSessionConfig;
-import org.openmrs.module.drools.session.StatefulSessionRegistry;
+import org.openmrs.module.drools.session.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
@@ -35,7 +33,7 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 	@Autowired
 	private DroolsConfig droolsConfig;
 
-	private Map<String, RuleSessionConfig> ruleConfigs;
+	private Map<String, DroolsSessionConfig> ruleConfigs;
 
 	private DroolsEventsManager eventsManager = new DroolsEventsManager();
 
@@ -51,10 +49,11 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 			kieContainer = kieContainerBuilder.build();
 		}
 		if (ruleConfigs.get(sessionId) != null) {
-			RuleSessionConfig requestedSessionConfig = ruleConfigs.get(sessionId);
+			DroolsSessionConfig requestedSessionConfig = ruleConfigs.get(sessionId);
 			session = sessionRegistry.requestSession(requestedSessionConfig, kieContainer, globalBindings);
 			if (session != null) {
 				eventsManager.subscribeSessionEventListenersIfNecessary(sessionId, session, ruleConfigs);
+
 				return session;
 			}
 		} else {
@@ -68,19 +67,30 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 		KieSession currentSession = requestSession(sessionId);
 		if (currentSession != null) {
 			facts.forEach(currentSession::insert);
-			String allowedAgendaGroup = ruleConfigs.get(sessionId).getAgendaGroup();
-			AgendaFilter agendaFilter = ruleConfigs.get(sessionId).getAgendaFilter();
-			if (StringUtils.isNotBlank(allowedAgendaGroup)) {
-				currentSession.getAgenda().getAgendaGroup(allowedAgendaGroup).setFocus();
-				if (agendaFilter == null) {
-					agendaFilter = new AgendaFilterByNameOrGroup(null, allowedAgendaGroup);
-				}
-			}
-			currentSession.fireAllRules(agendaFilter);
+			currentSession.fireAllRules(getSessionAgendaFilter(currentSession, ruleConfigs.get(sessionId)));
 		} else {
 			throw new DroolsSessionException("Could not establish a KIE session of ID: " + sessionId);
 		}
 		return currentSession;
+	}
+
+	@Override
+	public DroolsExecutionResult evaluate(String sessionId, Collection<Object> facts, Class<?> resultClazz) {
+		KieSession currentSession = requestSession(sessionId);
+		DroolsExecutionResult result;
+		if (currentSession != null) {
+			facts.forEach(currentSession::insert);
+			int fired = currentSession.fireAllRules(getSessionAgendaFilter(currentSession, ruleConfigs.get(sessionId)));
+			List<?> results = getSessionObjects(currentSession, resultClazz);
+			result = new DroolsExecutionResult(sessionId, fired, (List<Object>) results);
+			// TODO: should we just dispose the session instead so that it's garbage collected?
+			currentSession.getFactHandles().forEach(currentSession::delete);
+
+		} else {
+			throw new DroolsSessionException("Could not establish a KIE session of ID: " + sessionId);
+		}
+
+		return result;
 	}
 
 	@Override
@@ -148,21 +158,41 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 	}
 
 	@Override
-	public List<RuleSessionConfig> getSessionsForAutoStart() {
+	public List<DroolsSessionConfig> getSessionsForAutoStart() {
 		if (ruleConfigs == null) {
 			ruleConfigs = initializeSessionConfigs();
 		}
-		return ruleConfigs.values().stream().filter(RuleSessionConfig::getAutoStart).collect(Collectors.toList());
+		return ruleConfigs.values().stream().filter(DroolsSessionConfig::getAutoStart).collect(Collectors.toList());
 	}
 
-	private Map<String, RuleSessionConfig> initializeSessionConfigs() {
+	@Override
+	public DroolsSessionConfig getSessionConfig(String sessionId) {
+		if (ruleConfigs == null) {
+			ruleConfigs = initializeSessionConfigs();
+		}
+		return ruleConfigs.get(sessionId);
+	}
+
+	private Map<String, DroolsSessionConfig> initializeSessionConfigs() {
 		List<RuleProvider> ruleProviders = droolsConfig.getRuleProviders();
-		Map<String, RuleSessionConfig> sessionConfigMap = ruleProviders.stream().map(RuleProvider::getSessionConfigs).flatMap(List::stream)
-				.collect(Collectors.toMap(RuleSessionConfig::getSessionId, ruleSessionConfig -> ruleSessionConfig));
+		Map<String, DroolsSessionConfig> sessionConfigMap = ruleProviders.stream().map(RuleProvider::getSessionConfigs).flatMap(List::stream)
+				.collect(Collectors.toMap(DroolsSessionConfig::getSessionId, ruleSessionConfig -> ruleSessionConfig));
 		sessionConfigMap.forEach((sessionId, config) -> {
 			globalBindings.put(sessionId, config.getGlobals());
 		});
 		return sessionConfigMap;
+	}
+
+	private AgendaFilter getSessionAgendaFilter(KieSession session,  DroolsSessionConfig sessionConfig) {
+		String allowedAgendaGroup = sessionConfig.getAgendaGroup();
+		AgendaFilter agendaFilter = sessionConfig.getAgendaFilter();
+		if (StringUtils.isNotBlank(allowedAgendaGroup)) {
+			session.getAgenda().getAgendaGroup(allowedAgendaGroup).setFocus();
+			if (agendaFilter == null) {
+				return new AgendaFilterByNameOrGroup(null, allowedAgendaGroup);
+			}
+		}
+		return agendaFilter;
 	}
 
 	public StatefulSessionRegistry getSessionRegistry() {

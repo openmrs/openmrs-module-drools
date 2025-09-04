@@ -6,7 +6,7 @@ import java.util.Map;
 import org.kie.api.runtime.KieSession;
 import org.openmrs.event.Event;
 import org.openmrs.module.DaemonToken;
-import org.openmrs.module.drools.session.RuleSessionConfig;
+import org.openmrs.module.drools.session.DroolsSessionConfig;
 
 public class DroolsEventsManager {
 
@@ -18,9 +18,9 @@ public class DroolsEventsManager {
     }
 
     public void subscribeSessionEventListenersIfNecessary(String sessionId, KieSession session,
-            Map<String, RuleSessionConfig> ruleConfigs) {
+            Map<String, DroolsSessionConfig> ruleConfigs) {
         if (!activeSubscriptions.containsKey(sessionId)) {
-            RuleSessionConfig sessionConfig = ruleConfigs.get(sessionId);
+            DroolsSessionConfig sessionConfig = ruleConfigs.get(sessionId);
             if (sessionConfig.getSystemEventListeners() != null) {
                 sessionConfig.getSystemEventListeners().forEach(systemEventListener -> {
                     systemEventListener.setSession(session);

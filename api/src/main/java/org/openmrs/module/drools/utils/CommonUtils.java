@@ -5,7 +5,7 @@ import org.drools.decisiontable.SpreadsheetCompiler;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.openmrs.module.drools.session.ExternalEvaluatorManager;
-import org.openmrs.module.drools.session.RuleSessionConfig;
+import org.openmrs.module.drools.session.DroolsSessionConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +17,7 @@ public class CommonUtils {
 
     private static Logger log = LoggerFactory.getLogger(CommonUtils.class);
 
-    public static KieSession createKieSession(KieContainer container, RuleSessionConfig config,
+    public static KieSession createKieSession(KieContainer container, DroolsSessionConfig config,
             ExternalEvaluatorManager evaluatorManager, Map<String, Map<String, Object>> globalBindings) {
         log.debug("Creating new KieSession");
         KieSession session = container.newKieSession();

@@ -4,7 +4,7 @@ import org.kie.api.io.ResourceType;
 import org.openmrs.module.drools.RuleResource;
 import org.openmrs.module.drools.api.RuleProvider;
 import org.openmrs.module.drools.session.ExternalEvaluator;
-import org.openmrs.module.drools.session.RuleSessionConfig;
+import org.openmrs.module.drools.session.DroolsSessionConfig;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -25,8 +25,8 @@ public class TestSepsisRuleProvider implements RuleProvider  {
     }
 
     @Override
-    public List<RuleSessionConfig> getSessionConfigs() {
-        RuleSessionConfig config = new RuleSessionConfig();
+    public List<DroolsSessionConfig> getSessionConfigs() {
+        DroolsSessionConfig config = new DroolsSessionConfig();
         config.setSessionId("Test Sepsis");
         config.setAutoStart(false);
 

@@ -230,6 +230,7 @@
         <openmrsPlatformVersion>2.7.0</openmrsPlatformVersion>
         <patientFlagsVersion>3.0.8</patientFlagsVersion>
 		<eventVersion>2.5</eventVersion>
+		<webservicesRestVersion>2.50.0</webservicesRestVersion>
     </properties>
 
 	<build>

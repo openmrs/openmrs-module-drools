@@ -3,12 +3,11 @@ package org.openmrs.module.drools.session;
 import org.kie.api.event.rule.RuleRuntimeEventListener;
 import org.kie.api.runtime.rule.AgendaFilter;
 import org.openmrs.module.drools.event.DroolsSystemEventListener;
+import org.openmrs.module.drools.param.DroolsParameterDefinition;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
-public class RuleSessionConfig {
+public class DroolsSessionConfig {
 
 	private String sessionId;
 
@@ -21,6 +20,10 @@ public class RuleSessionConfig {
 	private Boolean autoStart;
 
 	private HashMap<String, Object> globals;
+
+	private Set<DroolsParameterDefinition> parameterDefinitions = new HashSet<>();
+
+	private String returnObjectsTypeClassName;
 
 	private int initialPoolSize;
 
@@ -40,17 +43,30 @@ public class RuleSessionConfig {
 
 	private List<DroolsSystemEventListener> systemEventListeners;
 
-	public RuleSessionConfig() {
+	public DroolsSessionConfig() {
 		this.sessionRuntimeEventListeners = new ArrayList<>();
 		this.globals = new HashMap<>();
 	}
 
-	public RuleSessionConfig(String sessionId, Boolean autoStart, HashMap<String, Object> globals,
-			List<RuleRuntimeEventListener> sessionRuntimeEventListeners,
-			List<DroolsSystemEventListener> systemEventListeners) {
+	public DroolsSessionConfig(String sessionId, Boolean autoStart, HashMap<String, Object> globals,
+							   List<RuleRuntimeEventListener> sessionRuntimeEventListeners,
+							   List<DroolsSystemEventListener> systemEventListeners) {
 		this.sessionId = sessionId;
 		this.autoStart = autoStart;
 		this.globals = globals;
+		this.sessionRuntimeEventListeners = sessionRuntimeEventListeners;
+		this.systemEventListeners = systemEventListeners;
+	}
+
+	public DroolsSessionConfig(String sessionId, Boolean autoStart, HashMap<String, Object> globals, Set<DroolsParameterDefinition> parameterDefinitions, String returnObjectsTypeClassName, int initialPoolSize, String agendaGroup, AgendaFilter agendaFilter, List<RuleRuntimeEventListener> sessionRuntimeEventListeners, List<DroolsSystemEventListener> systemEventListeners) {
+		this.sessionId = sessionId;
+		this.autoStart = autoStart;
+		this.globals = globals;
+		this.parameterDefinitions = parameterDefinitions;
+		this.returnObjectsTypeClassName = returnObjectsTypeClassName;
+		this.initialPoolSize = initialPoolSize;
+		this.agendaGroup = agendaGroup;
+		this.agendaFilter = agendaFilter;
 		this.sessionRuntimeEventListeners = sessionRuntimeEventListeners;
 		this.systemEventListeners = systemEventListeners;
 	}
@@ -117,5 +133,21 @@ public class RuleSessionConfig {
 
 	public void setSystemEventListeners(List<DroolsSystemEventListener> systemEventListeners) {
 		this.systemEventListeners = systemEventListeners;
+	}
+
+	public Set<DroolsParameterDefinition> getParameterDefinitions() {
+		return parameterDefinitions;
+	}
+
+	public void setParameterDefinitions(Set<DroolsParameterDefinition> parameterDefinitions) {
+		this.parameterDefinitions = parameterDefinitions;
+	}
+
+	public String getReturnObjectsTypeClassName() {
+		return returnObjectsTypeClassName;
+	}
+
+	public void setReturnObjectsTypeClassName(String returnObjectsTypeClassName) {
+		this.returnObjectsTypeClassName = returnObjectsTypeClassName;
 	}
 }

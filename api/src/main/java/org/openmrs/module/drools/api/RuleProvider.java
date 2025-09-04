@@ -2,7 +2,7 @@ package org.openmrs.module.drools.api;
 
 import org.openmrs.module.drools.RuleResource;
 import org.openmrs.module.drools.session.ExternalEvaluator;
-import org.openmrs.module.drools.session.RuleSessionConfig;
+import org.openmrs.module.drools.session.DroolsSessionConfig;
 
 import java.util.List;
 import java.util.Map;
@@ -13,7 +13,7 @@ public interface RuleProvider {
 
 	List<RuleResource> getRuleResources();
 
-	List<RuleSessionConfig> getSessionConfigs();
+	List<DroolsSessionConfig> getSessionConfigs();
 
 	Map<String, ExternalEvaluator> getExternalEvaluators();
 }

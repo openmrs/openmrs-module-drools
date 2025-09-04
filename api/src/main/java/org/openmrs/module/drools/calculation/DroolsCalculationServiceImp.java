@@ -123,7 +123,8 @@ public class DroolsCalculationServiceImp implements DroolsCalculationService {
     @Override
     public Boolean hasEncounterRecord(Patient patient, String encounterTypeUuid) {
         EncounterService encounterService = Context.getEncounterService();
-        EncounterType encounterType = encounterService.getEncounterTypeByUuid(encounterTypeUuid);
+        EncounterType encounterType = getEncounterType(encounterTypeUuid);
+
         if (encounterType == null) {
             throw new IllegalArgumentException("Encounter type not found for uuid: " + encounterTypeUuid);
         }
@@ -132,4 +133,25 @@ public class DroolsCalculationServiceImp implements DroolsCalculationService {
         return !encounterService.getEncounters(criteria).isEmpty();
     }
 
+    @Override
+    public Boolean hasEncounter(Patient patient, String encounterTypeUuid, Date from, Date to) {
+        EncounterService encounterService = Context.getEncounterService();
+        EncounterType encounterType = getEncounterType(encounterTypeUuid);
+
+        if (encounterType == null) {
+            throw new IllegalArgumentException("Encounter type not found for uuid: " + encounterTypeUuid);
+        }
+        EncounterSearchCriteria criteria = new EncounterSearchCriteria(patient, null, from, to, null, null,
+                Collections.singletonList(encounterType), null, null, null, false);
+        return !encounterService.getEncounters(criteria).isEmpty();
+    }
+
+    private EncounterType getEncounterType(String encounterTypeRef) {
+        EncounterService encounterService = Context.getEncounterService();
+        EncounterType encounterType = encounterService.getEncounterTypeByUuid(encounterTypeRef);
+        if (encounterType == null) {
+            encounterType = encounterService.getEncounterType(encounterTypeRef);
+        }
+        return encounterType;
+    }
 }
