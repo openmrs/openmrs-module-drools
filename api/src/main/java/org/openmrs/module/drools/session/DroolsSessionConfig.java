@@ -17,7 +17,7 @@ public class DroolsSessionConfig {
 	 *
 	 * Note: Auto started sessions will be disposed when the module stops while on fly sessions will be disposed when the thread ends (finally)
 	 */
-	private Boolean autoStart;
+	private Boolean autoStart = false;
 
 	private HashMap<String, Object> globals;
 

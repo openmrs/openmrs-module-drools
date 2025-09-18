@@ -58,6 +58,7 @@ public class DroolsParameterFactResolver {
         resolvers.put(OBS_UUID, uuid -> Context.getObsService().getObsByUuid(uuid));
         resolvers.put(VISIT_UUID, uuid -> Context.getVisitService().getVisitByUuid(uuid));
         resolvers.put(FORM_UUID, uuid -> Context.getFormService().getFieldByUuid(uuid));
+        resolvers.put(DRUG_UUID, uuid -> Context.getConceptService().getDrugByUuid(uuid));
         return resolvers;
     }
 

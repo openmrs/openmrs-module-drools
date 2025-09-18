@@ -10,6 +10,13 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantLock;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 @Component
 public class DroolsSessionExecutor {
@@ -20,7 +27,41 @@ public class DroolsSessionExecutor {
     @Autowired
     private DroolsParameterFactResolver parameterFactResolver;
 
+    private ExecutorService executorService;
+
+    private final ConcurrentHashMap<String, ReentrantLock> sessionLocks = new ConcurrentHashMap<>();
+
+
+    @PostConstruct
+    public void init() {
+        this.executorService = Executors.newFixedThreadPool(10);
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (executorService != null) {
+            executorService.shutdown();
+        }
+    }
+
+    /**
+     * Synchronous execution
+     */
     public DroolsExecutionResult executeSession(String sessionId, Map<String, String> params) {
+        return performExecution(sessionId, params);
+    }
+
+    /**
+     * Asynchronous execution
+     */
+    public CompletableFuture<DroolsExecutionResult> executeSessionAsync(String sessionId, Map<String, String> params) {
+        return CompletableFuture.supplyAsync(() -> performExecution(sessionId, params), executorService);
+    }
+
+    /**
+     * Common execution logic extracted to avoid duplication
+     */
+    private DroolsExecutionResult performExecution(String sessionId, Map<String, String> params) {
         DroolsSessionConfig config = droolsService.getSessionConfig(sessionId);
         String clazzName = config.getReturnObjectsTypeClassName();
         Class<?> resultClazz;
@@ -39,6 +80,18 @@ public class DroolsSessionExecutor {
         }
 
         List<Object> facts = parameterFactResolver.resolveFacts(config, params);
-        return droolsService.evaluate(sessionId, facts, resultClazz);
+        ReentrantLock sessionLock = getSessionLock(sessionId);
+
+        sessionLock.lock();
+
+        try {
+            return droolsService.evaluate(sessionId, facts, resultClazz);
+        } finally {
+            sessionLock.unlock();
+        }
+    }
+
+    private ReentrantLock getSessionLock(String sessionId) {
+        return sessionLocks.computeIfAbsent(sessionId, k -> new ReentrantLock());
     }
 }

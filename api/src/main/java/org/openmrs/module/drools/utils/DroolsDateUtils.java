@@ -153,6 +153,36 @@ public class DroolsDateUtils {
     }
 
     /**
+     * Returns the difference between two dates in the given granularity.
+     *
+     * @param start the start date
+     * @param end the end date
+     * @param granularity the granularity
+     * @return the difference (end - start) in given units, negative if end < start
+     */
+    public static long diff(Date start, Date end, Granularity granularity) {
+        if (start == null || end == null || granularity == null) {
+            throw new IllegalArgumentException("Arguments must not be null");
+        }
+
+        LocalDate localStartDate = toLocalDate(start);
+        LocalDate localEndDate = toLocalDate(end);
+
+        switch (granularity) {
+            case DAYS:
+                return ChronoUnit.DAYS.between(localStartDate, localEndDate);
+            case WEEKS:
+                return ChronoUnit.WEEKS.between(localStartDate, localEndDate);
+            case MONTHS:
+                return ChronoUnit.MONTHS.between(localStartDate, localEndDate);
+            case YEARS:
+                return ChronoUnit.YEARS.between(localStartDate, localEndDate);
+            default:
+                throw new IllegalArgumentException("Unsupported granularity: " + granularity);
+        }
+    }
+
+    /**
      * Shifts the current date by the specified amount of time
      *
      * @param calendarField the field to adjust

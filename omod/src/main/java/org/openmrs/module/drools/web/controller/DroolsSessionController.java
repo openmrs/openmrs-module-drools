@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.openmrs.module.drools.RestUtil.convertToSimpleObject;
+import static org.openmrs.module.drools.web.RestUtil.convertToSimpleObject;
 
 @Controller
 @RequestMapping("/rest/" + RestConstants.VERSION_1 + DroolsSessionController.DROOLS_REST_NAMESPACE)
@@ -36,6 +36,8 @@ public class DroolsSessionController extends BaseRestController {
 
     @Autowired
     private DroolsSessionExecutor sessionExecutor;
+
+
 
     @Override
     public String getNamespace() {
@@ -59,6 +61,12 @@ public class DroolsSessionController extends BaseRestController {
         }
         // validate params
         validateParams(sessionConfig, allParams);
+        sessionExecutor.executeSessionAsync(sessionId, allParams)
+                .thenApply(result -> convertToSimpleObject(sessionExecutor.executeSession(sessionId, allParams), request))
+                .exceptionally(ex -> {
+                    // Handle exceptions
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+                });
         return convertToSimpleObject(sessionExecutor.executeSession(sessionId, allParams), request);
     }
 

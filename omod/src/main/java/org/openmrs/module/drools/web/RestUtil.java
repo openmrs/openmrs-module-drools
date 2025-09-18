@@ -1,4 +1,4 @@
-package org.openmrs.module.drools;
+package org.openmrs.module.drools.web;
 
 import org.openmrs.api.context.Context;
 import org.openmrs.module.drools.session.DroolsExecutionResult;

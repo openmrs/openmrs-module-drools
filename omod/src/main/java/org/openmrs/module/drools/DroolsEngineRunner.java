@@ -1,9 +1,9 @@
-package org.openmrs.module.drools.task;
+package org.openmrs.module.drools;
 
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.Daemon;
 import org.openmrs.module.DaemonToken;
-import org.openmrs.module.drools.RuleProviderLoader;
+import org.openmrs.module.drools.loader.RuleProviderLoader;
 import org.openmrs.module.drools.api.DroolsEngineService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,17 +18,13 @@ public class DroolsEngineRunner implements Runnable {
 
     @Override
     public void run() {
-        // TODO: We need to introduce session provider loaders eg. classpath loader,
-        // implementation-based loader, etc.
-        // to load rules and then start Drools engine on module startup
-
         DroolsEngineService droolsEngineService = Context.getService(DroolsEngineService.class);
 
         Context.getRegisteredComponents(RuleProviderLoader.class).forEach(ruleProviderLoader -> {
             try {
                 ruleProviderLoader.loadRuleProviders().forEach(droolsEngineService::registerRuleProvider);
             } catch (Exception e) {
-                log.error("Error loading rule provider(s)", e);
+                log.error("Error loading rule providers", e);
             }
         });
         droolsEngineService.getSessionsForAutoStart().forEach(sessionConfig -> {

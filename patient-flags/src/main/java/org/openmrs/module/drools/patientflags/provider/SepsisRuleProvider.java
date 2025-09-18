@@ -22,7 +22,7 @@ public class SepsisRuleProvider implements RuleProvider {
 
     @Override
     public Boolean isEnabled() {
-        return true;
+        return false;
     }
 
     @Override
@@ -36,7 +36,6 @@ public class SepsisRuleProvider implements RuleProvider {
         config.setSessionId("Sepsis");
         config.setAutoStart(true);
 
-        // TODO: Added for testing purposes
         config.getGlobals().put("calculationService", Context.getRegisteredComponents(DroolsCalculationService.class)
                 .get(0));
         config.getGlobals().put("flaggedPatients", new ArrayList<>());

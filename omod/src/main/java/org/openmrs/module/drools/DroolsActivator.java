@@ -5,7 +5,6 @@ import org.openmrs.module.DaemonToken;
 import org.openmrs.module.DaemonTokenAware;
 import org.openmrs.module.drools.event.DroolsEventsManager;
 import org.openmrs.module.drools.patientflags.PatientFlagInitializer;
-import org.openmrs.module.drools.task.DroolsEngineRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

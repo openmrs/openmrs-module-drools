@@ -21,7 +21,7 @@ public class FormsRuleProvider implements RuleProvider {
 
     @Override
     public Boolean isEnabled() {
-        return true;
+        return false;
     }
 
     @Override

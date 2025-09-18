@@ -9,6 +9,9 @@ import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.drools.utils.DroolsDateUtils;
 import java.text.ParseException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class CalculationUtils {
 
@@ -86,5 +89,16 @@ public class CalculationUtils {
             default:
                 throw new IllegalArgumentException("Unsupported concept datatype: " + datatype.getDatatypeCode());
         }
+    }
+
+    public static List<String> splitValues(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return List.of();
+        }
+
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
     }
 }

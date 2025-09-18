@@ -18,14 +18,11 @@
 
 	<require_modules>
 		<require_module version="${eventVersion}">org.openmrs.event</require_module>
-		<!-- TODO: Module should only be aware of the patient flags? -->
-		<require_module version="${calculationVersion}">org.openmrs.calculation</require_module>
 	    <require_module version="${patientFlagsVersion}">org.openmrs.module.patientflags</require_module>
 	</require_modules>
 
 	<!-- <aware_of_modules>
 		<aware_of_module>org.openmrs.module.patientflags</aware_of_module>
-		<aware_of_module>org.openmrs.module.calculation</aware_of_module>
 	</aware_of_modules>
 	 -->
 	<!-- Internationalization -->
@@ -43,6 +40,14 @@
 		<file>messages_es.properties</file>
 	</messages>
 	<!-- /Internationalization -->
+
+	<globalProperty>
+		<property>drools.storage_dir</property>
+		<defaultValue>drools</defaultValue>
+		<description>
+			Default directory for storing Drools data
+		</description>
+	</globalProperty>
 	
 </module>
 

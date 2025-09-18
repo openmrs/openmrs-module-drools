@@ -137,6 +137,9 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 		if (ruleConfigs == null) {
 			ruleConfigs = initializeSessionConfigs();
 		}
+		if (!ruleProvider.isEnabled()) {
+			return;
+		}
 		// register resources
 		if (ruleProvider.getRuleResources() != null) {
 			ruleProvider.getRuleResources().forEach(kieContainerBuilder::addResource);

@@ -1,10 +1,7 @@
 package org.openmrs.module.drools.patientflags;
 
-import java.io.IOException;
-import java.util.*;
-
-import org.codehaus.jackson.map.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.kie.api.runtime.KieSession;
 
 import org.openmrs.Cohort;
@@ -12,13 +9,18 @@ import org.openmrs.CohortMembership;
 import org.openmrs.Patient;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.drools.api.DroolsEngineService;
-import org.openmrs.module.drools.calculation.DroolsCalculationService;
 import org.openmrs.module.drools.session.AgendaFilterByNameOrGroup;
 import org.openmrs.module.patientflags.Flag;
 import org.openmrs.module.patientflags.FlagValidationResult;
 import org.openmrs.module.patientflags.evaluator.FlagEvaluator;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class DroolsFlagEvaluator implements FlagEvaluator {
@@ -39,15 +41,11 @@ public class DroolsFlagEvaluator implements FlagEvaluator {
             log.warn("Cohort is null");
             return resultCohort;
         }
-        List<FlaggedPatient> flaggedPatients = new ArrayList<>();
         DroolsEngineService droolsEngineService = Context.getService(DroolsEngineService.class);
-        DroolsCalculationService calculationService = Context.getRegisteredComponents(DroolsCalculationService.class)
-                .get(0);
 
         DroolsFlagConfigDescriptor config = extractDroolsFlagConfig(flag);
         KieSession session = droolsEngineService.requestSession(config.getSession());
-        session.setGlobal("flaggedPatients", flaggedPatients);
-        session.setGlobal("calculationService", calculationService);
+
         cohort.getActiveMemberships().stream().map(CohortMembership::getPatientId).forEach(id -> {
             Patient patient = Context.getPatientService().getPatient(id);
             session.insert(patient);
@@ -57,10 +55,9 @@ public class DroolsFlagEvaluator implements FlagEvaluator {
             session.getAgenda().getAgendaGroup(config.getAgendaGroup()).setFocus();
         }
 
-        int fired = session.fireAllRules(new AgendaFilterByNameOrGroup(config.getRules(), config.getAgendaGroup()));
-        log.debug("Fired {} rules", fired);
+        session.fireAllRules(new AgendaFilterByNameOrGroup(config.getRules(), config.getAgendaGroup()));
 
-        for (FlaggedPatient flagged : flaggedPatients) {
+        for (FlaggedPatient flagged : droolsEngineService.getSessionObjects(session, FlaggedPatient.class)) {
             resultCohort.addMember(flagged.getPatientId());
             // Store message in context map if one was provided
             if (flagged.getMessage() != null && !flagged.getMessage().isEmpty()) {
@@ -73,7 +70,6 @@ public class DroolsFlagEvaluator implements FlagEvaluator {
                 messages.add(flagged.getMessage());
             }
         }
-
         // clean up
         session.getFactHandles().forEach(session::delete);
         return resultCohort;
@@ -81,7 +77,6 @@ public class DroolsFlagEvaluator implements FlagEvaluator {
 
     @Override
     public String evalMessage(Flag flag, int patientId) {
-        // TODO figure out a more dynamic way to resolve flag messages
         return flag.getMessage();
     }
 

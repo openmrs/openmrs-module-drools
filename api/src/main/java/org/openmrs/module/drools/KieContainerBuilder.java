@@ -6,6 +6,7 @@ import org.kie.api.runtime.KieContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -40,8 +41,18 @@ public class KieContainerBuilder {
         }
         for (RuleResource resource : resources) {
             try {
-                kieFileSystem.write(kieServices.getResources().newClassPathResource(resource.getPath())
-                        .setResourceType(resource.getResourceType()));
+                File file = new File(resource.getPath());
+                if (file.exists()) {
+                    kieFileSystem.write(kieServices.getResources()
+                            .newFileSystemResource(file)
+                            .setResourceType(resource.getResourceType()));
+                } else {
+                    // Fallback to classpath
+                    kieFileSystem.write(kieServices.getResources()
+                            .newClassPathResource(resource.getPath())
+                            .setResourceType(resource.getResourceType()));
+                }
+
             } catch (Exception e) {
                 log.error("Error while adding resource: " + resource.getPath(), e);
             }

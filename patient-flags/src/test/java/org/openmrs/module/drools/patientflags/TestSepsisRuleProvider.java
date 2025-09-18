@@ -1,8 +1,10 @@
 package org.openmrs.module.drools.patientflags;
 
 import org.kie.api.io.ResourceType;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.drools.RuleResource;
 import org.openmrs.module.drools.api.RuleProvider;
+import org.openmrs.module.drools.calculation.DroolsCalculationService;
 import org.openmrs.module.drools.session.ExternalEvaluator;
 import org.openmrs.module.drools.session.DroolsSessionConfig;
 import org.springframework.stereotype.Component;
@@ -29,7 +31,7 @@ public class TestSepsisRuleProvider implements RuleProvider  {
         DroolsSessionConfig config = new DroolsSessionConfig();
         config.setSessionId("Test Sepsis");
         config.setAutoStart(false);
-
+        config.getGlobals().put("service", Context.getRegisteredComponents(DroolsCalculationService.class).get(0));
         return List.of(config);
     }
 
