@@ -5,7 +5,6 @@ import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.ObjectFilter;
 import org.kie.api.runtime.rule.AgendaFilter;
-import org.kie.api.runtime.rule.FactHandle;
 import org.openmrs.OpenmrsObject;
 import org.openmrs.api.impl.BaseOpenmrsService;
 import org.openmrs.module.drools.DroolsConfig;
@@ -14,6 +13,7 @@ import org.openmrs.module.drools.api.DroolsEngineService;
 import org.openmrs.module.drools.api.RuleProvider;
 import org.openmrs.module.drools.event.DroolsEventsManager;
 import org.openmrs.module.drools.session.*;
+import org.openmrs.module.drools.utils.CommonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
@@ -21,9 +21,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class DroolsEngineServiceImpl extends BaseOpenmrsService implements DroolsEngineService {
-
-	@Autowired
-	private StatefulSessionRegistry sessionRegistry;
 
 	private KieContainer kieContainer;
 
@@ -49,17 +46,13 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 			kieContainer = kieContainerBuilder.build();
 		}
 		if (ruleConfigs.get(sessionId) != null) {
-			DroolsSessionConfig requestedSessionConfig = ruleConfigs.get(sessionId);
-			session = sessionRegistry.requestSession(requestedSessionConfig, kieContainer, globalBindings);
-			if (session != null) {
-				eventsManager.subscribeSessionEventListenersIfNecessary(sessionId, session, ruleConfigs);
+			session = CommonUtils.createKieSession(kieContainer, ruleConfigs.get(sessionId), droolsConfig.getExternalEvaluatorManager(), globalBindings);
+			eventsManager.subscribeSessionEventListenersIfNecessary(sessionId, session, ruleConfigs);
 
-				return session;
-			}
+			return session;
 		} else {
 			throw new DroolsSessionException("Can't find session configuration for: " + sessionId);
 		}
-		return null;
 	}
 
 	@Override
@@ -83,8 +76,7 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 			int fired = currentSession.fireAllRules(getSessionAgendaFilter(currentSession, ruleConfigs.get(sessionId)));
 			List<?> results = getSessionObjects(currentSession, resultClazz);
 			result = new DroolsExecutionResult(sessionId, fired, (List<Object>) results);
-			// TODO: should we just dispose the session instead so that it's garbage collected?
-			currentSession.getFactHandles().forEach(currentSession::delete);
+			currentSession.dispose();
 
 		} else {
 			throw new DroolsSessionException("Could not establish a KIE session of ID: " + sessionId);
@@ -196,14 +188,6 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 			}
 		}
 		return agendaFilter;
-	}
-
-	public StatefulSessionRegistry getSessionRegistry() {
-		return sessionRegistry;
-	}
-
-	public void setSessionRegistry(StatefulSessionRegistry sessionRegistry) {
-		this.sessionRegistry = sessionRegistry;
 	}
 
 	public KieContainer getKieContainer() {

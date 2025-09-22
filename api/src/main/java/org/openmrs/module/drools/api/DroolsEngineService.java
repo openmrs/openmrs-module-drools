@@ -14,18 +14,32 @@ import java.util.function.Predicate;
 public interface DroolsEngineService extends OpenmrsService {
 
 	/**
-	 * Evaluates a collection of facts in a Drools session.
-	 * 
-	 * If the session with the given ID does not exist, a new session is created.
-	 * 
+	 * Evaluates a collection of facts in a newly created Drools session.
+	 * <p>
+	 * Note: The caller is responsible for disposing of the session after use
+	 * to prevent memory leaks.
+	 *
 	 * @param sessionId the identifier of a preconfigured Drools session to use
-	 * @param facts     the collection of OpenMRS objects to evaluate as facts
-	 * @return KieSession the Drools session after evaluation
-	 * @throws DroolsSessionException if the session could not be established or the
-	 *                                session configuration is missing or invalid
+	 * @param facts     the collection of OpenMRS objects to insert into the session as facts
+	 * @return the Drools {@link KieSession} after rule evaluation
+	 * @throws DroolsSessionException if the session could not be established,
+	 *                                or if the configuration is missing or invalid
 	 */
 	public KieSession evaluate(String sessionId, Collection<? extends OpenmrsObject> facts);
 
+	/**
+	 * Evaluates a collection of facts in a new Drools session and collects results.
+	 * <p>
+	 * Unlike {@link #evaluate(String, Collection)}, this method disposes of the session
+	 * automatically after execution and returns the results of evaluation.
+	 *
+	 * @param sessionId   the identifier of a preconfigured Drools session to use
+	 * @param facts       the collection of objects to evaluate as facts
+	 * @param resultClazz the expected type of objects to extract from the session after evaluation
+	 * @return a {@link DroolsExecutionResult} containing all matching objects of type {@code resultClazz}
+	 * @throws DroolsSessionException if the session could not be established,
+	 *                                or if the configuration is missing or invalid
+	 */
 	public DroolsExecutionResult evaluate(String sessionId, Collection<Object> facts, Class<?> resultClazz);
 
 	/**
@@ -55,10 +69,14 @@ public interface DroolsEngineService extends OpenmrsService {
 	public <T> List<T> getSessionObjects(KieSession session, Class<T> tClass, Predicate<T> tPredicate);
 
 	/**
-	 * Returns existing session or creates a new one if it does not exist.
-	 * 
-	 * @param sessionId the identifier of the session to request
-	 * @return KieSession the requested session
+	 * Creates and initializes a new Drools session using a predefined configuration.
+	 * <p>
+	 * The provided {@code sessionId} must correspond to an existing session configuration.
+	 *
+	 * @param sessionId the identifier of the session to create
+	 * @return the newly created {@link KieSession}
+	 * @throws DroolsSessionException if no matching session configuration exists
+	 *                                or if initialization fails
 	 */
 	public KieSession requestSession(String sessionId);
 
@@ -66,7 +84,7 @@ public interface DroolsEngineService extends OpenmrsService {
 	 * Manually registers a rule provider and its associated resources into the
 	 * Drools container.
 	 * 
-	 * @param ruleProvider
+	 * @param ruleProvider the provider to be registered
 	 */
 	public void registerRuleProvider(RuleProvider ruleProvider);
 

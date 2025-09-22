@@ -70,8 +70,8 @@ public class DroolsFlagEvaluator implements FlagEvaluator {
                 messages.add(flagged.getMessage());
             }
         }
-        // clean up
-        session.getFactHandles().forEach(session::delete);
+        // dispose of session
+        session.dispose();
         return resultCohort;
     }
 

@@ -64,7 +64,6 @@ public class DroolsSessionController extends BaseRestController {
         sessionExecutor.executeSessionAsync(sessionId, allParams)
                 .thenApply(result -> convertToSimpleObject(sessionExecutor.executeSession(sessionId, allParams), request))
                 .exceptionally(ex -> {
-                    // Handle exceptions
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
                 });
         return convertToSimpleObject(sessionExecutor.executeSession(sessionId, allParams), request);

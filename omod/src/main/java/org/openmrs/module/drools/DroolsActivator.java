@@ -4,19 +4,19 @@ import org.openmrs.module.BaseModuleActivator;
 import org.openmrs.module.DaemonToken;
 import org.openmrs.module.DaemonTokenAware;
 import org.openmrs.module.drools.event.DroolsEventsManager;
-import org.openmrs.module.drools.patientflags.PatientFlagInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DroolsActivator extends BaseModuleActivator implements DaemonTokenAware {
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    private final DroolsEngineRunner runner = new DroolsEngineRunner();
 
     /**
      * @see #started()
      */
     public void started() {
-        PatientFlagInitializer.initialize();
-        new DroolsEngineRunner().startDroolsEngine();
+        runner.startDroolsEngine();
         log.info("Started OpenMRS Drools Engine");
     }
 
@@ -24,9 +24,8 @@ public class DroolsActivator extends BaseModuleActivator implements DaemonTokenA
      * @see #shutdown()
      */
     public void shutdown() {
-        // TODO: Add shutdown logic here
-        // eventsManager.unSubscribeAll();
-        // dispose all sessions
+        // dispose of sessions
+        runner.shutdown();
         log.info("OpenMRS Drools Engine stopped");
     }
 
