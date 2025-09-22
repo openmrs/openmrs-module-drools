@@ -18,6 +18,7 @@ README.html
 *.iml
 
 .settings/*
+.~lock.*
 **/bin
 **/.classpath
 **/.project

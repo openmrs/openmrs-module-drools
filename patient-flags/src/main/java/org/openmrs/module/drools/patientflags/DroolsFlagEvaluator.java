@@ -12,6 +12,7 @@ import org.openmrs.module.drools.api.DroolsEngineService;
 import org.openmrs.module.drools.session.AgendaFilterByNameOrGroup;
 import org.openmrs.module.patientflags.Flag;
 import org.openmrs.module.patientflags.FlagValidationResult;
+import org.openmrs.module.patientflags.PatientFlag;
 import org.openmrs.module.patientflags.evaluator.FlagEvaluator;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -57,16 +58,16 @@ public class DroolsFlagEvaluator implements FlagEvaluator {
 
         session.fireAllRules(new AgendaFilterByNameOrGroup(config.getRules(), config.getAgendaGroup()));
 
-        for (FlaggedPatient flagged : droolsEngineService.getSessionObjects(session, FlaggedPatient.class)) {
-            resultCohort.addMember(flagged.getPatientId());
+        for (PatientFlag flagged : droolsEngineService.getSessionObjects(session, PatientFlag.class)) {
+            resultCohort.addMember(flagged.getPatient().getPatientId());
             // Store message in context map if one was provided
             if (flagged.getMessage() != null && !flagged.getMessage().isEmpty()) {
-                if (!contextMap.containsKey(flagged.getPatientId())) {
-                    contextMap.put(flagged.getPatientId(), new ArrayList<String>());
+                if (!contextMap.containsKey(flagged.getPatient().getPatientId())) {
+                    contextMap.put(flagged.getPatient().getPatientId(), new ArrayList<String>());
                 }
 
                 @SuppressWarnings("unchecked")
-                List<String> messages = (List<String>) contextMap.get(flagged.getPatientId());
+                List<String> messages = (List<String>) contextMap.get(flagged.getPatient().getPatientId());
                 messages.add(flagged.getMessage());
             }
         }
