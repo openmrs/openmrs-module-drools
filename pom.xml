@@ -69,6 +69,28 @@
 				<artifactId>initializer-api</artifactId>
 				<version>${initializerVersion}</version>
 				<scope>provided</scope>
+				<exclusions>
+<!--					<exclusion>-->
+<!--						<groupId>org.openmrs.module</groupId>-->
+<!--						<artifactId>reporting-api</artifactId>-->
+<!--					</exclusion>-->
+					<exclusion>
+						<groupId>org.apache.poi</groupId>
+						<artifactId>poi</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.apache.poi</groupId>
+						<artifactId>poi-ooxml</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.apache.poi</groupId>
+						<artifactId>poi-ooxml-schemas</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.apache.xmlbeans</groupId>
+						<artifactId>xmlbeans</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.openmrs.api</groupId>

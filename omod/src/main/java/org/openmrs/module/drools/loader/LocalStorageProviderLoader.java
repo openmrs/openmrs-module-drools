@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static org.openmrs.module.drools.loader.FileUtils.getDroolsInstallationDir;
+
 @Component
 public class LocalStorageProviderLoader implements RuleProviderLoader {
 
@@ -55,12 +57,9 @@ public class LocalStorageProviderLoader implements RuleProviderLoader {
     }
 
     private Path getRootDir() {
-        Path omrsAppDir = Paths.get(OpenmrsUtil.getApplicationDataDirectory());
-        String droolsConfigDir = Context.getAdministrationService().getGlobalProperty(DroolsModuleConstants.GP_LOCAL_STORAGE_DIR);
-        Path droolsConfigStoragePath = omrsAppDir.resolve(droolsConfigDir);
-
-        if (Files.exists(droolsConfigStoragePath)) {
-            return droolsConfigStoragePath;
+        Path droolsConfigPath = getDroolsInstallationDir();
+        if (Files.exists(droolsConfigPath)) {
+            return droolsConfigPath;
         } else {
             // TODO: Handle edge cases
             return null;
