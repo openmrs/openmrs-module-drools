@@ -35,12 +35,12 @@ public interface DroolsEngineService extends OpenmrsService {
 	 *
 	 * @param sessionId   the identifier of a preconfigured Drools session to use
 	 * @param facts       the collection of objects to evaluate as facts
-	 * @param resultClazz the expected type of objects to extract from the session after evaluation
+	 * @param resultClassName the fully qualified class name of objects to extract from the session.
 	 * @return a {@link DroolsExecutionResult} containing all matching objects of type {@code resultClazz}
 	 * @throws DroolsSessionException if the session could not be established,
 	 *                                or if the configuration is missing or invalid
 	 */
-	public DroolsExecutionResult evaluate(String sessionId, Collection<Object> facts, Class<?> resultClazz);
+	public DroolsExecutionResult evaluate(String sessionId, Collection<Object> facts, String resultClassName);
 
 	/**
 	 * Retrieves a collection of facts of the specified type from a Drools session.

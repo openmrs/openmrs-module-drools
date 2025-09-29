@@ -1,6 +1,8 @@
 package org.openmrs.module.drools.api.impl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.kie.api.KieBase;
+import org.kie.api.definition.type.FactType;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.ObjectFilter;
@@ -68,13 +70,13 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 	}
 
 	@Override
-	public DroolsExecutionResult evaluate(String sessionId, Collection<Object> facts, Class<?> resultClazz) {
+	public DroolsExecutionResult evaluate(String sessionId, Collection<Object> facts, String resultClassName) {
 		KieSession currentSession = requestSession(sessionId);
 		DroolsExecutionResult result;
 		if (currentSession != null) {
 			facts.forEach(currentSession::insert);
 			int fired = currentSession.fireAllRules(getSessionAgendaFilter(currentSession, ruleConfigs.get(sessionId)));
-			List<?> results = getSessionObjects(currentSession, resultClazz);
+			List<?> results = getSessionObjects(currentSession, resolveClass(resultClassName, currentSession.getKieBase()));
 			result = new DroolsExecutionResult(sessionId, fired, (List<Object>) results);
 			currentSession.dispose();
 
@@ -189,6 +191,47 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 		}
 		return agendaFilter;
 	}
+
+	/**
+	 * Resolves a class by name, attempting standard classloading first,
+	 * then falling back to Drools-declared types if not found.
+	 *
+	 * @param className the fully qualified class name
+	 * @param kieBase   the KieBase to search for DRL-declared types
+	 * @return the resolved Class object
+	 * @throws DroolsSessionException if the class cannot be resolved by either method
+	 */
+	private Class<?> resolveClass(String className, KieBase kieBase) {
+		try {
+			return Class.forName(className);
+		} catch (ClassNotFoundException e) {
+			// Fall back to Drools-declared types
+			return resolveDroolsType(className, kieBase);
+		}
+	}
+
+	/**
+	 * Resolves a DRL-declared type from the KieBase.
+	 *
+	 * @param className the fully qualified class name (e.g., "com.example.MyType")
+	 * @param kieBase   the KieBase containing the declared type
+	 * @return the resolved Class object
+	 * @throws DroolsSessionException if the type cannot be found in the KieBase
+	 */
+	private Class<?> resolveDroolsType(String className, KieBase kieBase) {
+		int lastDot = className.lastIndexOf('.');
+		String packageName = lastDot > 0 ? className.substring(0, lastDot) : "";
+		String typeName = lastDot > 0 ? className.substring(lastDot + 1) : className;
+
+		FactType factType = kieBase.getFactType(packageName, typeName);
+		if (factType == null) {
+			throw new DroolsSessionException("Could not resolve class: " + className +
+					". Not found in classpath or as a DRL-declared type.");
+		}
+
+		return factType.getFactClass();
+	}
+
 
 	public KieContainer getKieContainer() {
 		return kieContainer;
