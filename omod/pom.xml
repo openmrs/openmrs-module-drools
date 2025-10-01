@@ -47,11 +47,6 @@
 			<artifactId>event-api</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.openmrs.module</groupId>
-			<artifactId>initializer-api</artifactId>
-			<scope>provided</scope>
-		</dependency>
 	</dependencies>
 
 	<build>
@@ -81,7 +76,6 @@
 			<plugin>
                 <groupId>org.openmrs.maven.plugins</groupId>
                 <artifactId>maven-openmrs-plugin</artifactId>
-
                 <extensions>true</extensions>
                 <executions>
                     <execution>
