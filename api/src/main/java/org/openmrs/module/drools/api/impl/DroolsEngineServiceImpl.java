@@ -32,6 +32,9 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 	@Autowired
 	private DroolsConfig droolsConfig;
 
+	@Autowired
+	private ThreadSafeSessionRegistry sessionRegistry;
+
 	private Map<String, DroolsSessionConfig> ruleConfigs;
 
 	private DroolsEventsManager eventsManager = new DroolsEventsManager();
@@ -50,6 +53,11 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 		if (ruleConfigs.get(sessionId) != null) {
 			session = CommonUtils.createKieSession(kieContainer, ruleConfigs.get(sessionId), droolsConfig.getExternalEvaluatorManager(), globalBindings);
 			eventsManager.subscribeSessionEventListenersIfNecessary(sessionId, session, ruleConfigs);
+
+			DroolsSessionConfig config = ruleConfigs.get(sessionId);
+			if (config.getAutoStart()) {
+				sessionRegistry.registerSession(sessionId, session, true);
+			}
 
 			return session;
 		} else {
@@ -134,11 +142,9 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 		if (!ruleProvider.isEnabled()) {
 			return;
 		}
-		// register resources
 		if (ruleProvider.getRuleResources() != null) {
 			ruleProvider.getRuleResources().forEach(kieContainerBuilder::addResource);
 		}
-		// register session configs
 		if (ruleProvider.getSessionConfigs() != null) {
 			ruleProvider.getSessionConfigs().forEach(ruleSessionConfig -> {
 				if (!ruleConfigs.containsKey(ruleSessionConfig.getSessionId())) {
@@ -150,7 +156,6 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 			});
 		}
 
-		// register external evaluators
 		droolsConfig.registerProviderExternalEvaluators(ruleProvider);
 	}
 
