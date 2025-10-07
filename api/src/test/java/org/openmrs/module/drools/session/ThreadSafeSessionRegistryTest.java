@@ -36,44 +36,42 @@ public class ThreadSafeSessionRegistryTest {
     @Test
     public void testRegisterSession_Success() {
         // Test successful registration
-        registry.registerSession("test-session-1", mockSession1, true);
+        boolean result = registry.registerSession("test-session-1", mockSession1, true);
 
+        assertTrue(result);
         assertTrue(registry.sessionExists("test-session-1"));
         assertEquals(1, registry.getActiveSessionCount());
     }
 
     @Test
-    public void testRegisterSession_ThrowsExceptionForNullSessionId() {
-        // Test null session ID throws exception
-        assertThrows(IllegalArgumentException.class, () -> {
-            registry.registerSession(null, mockSession1, true);
-        });
+    public void testRegisterSession_ReturnsFalseForNullSessionId() {
+        // Test null session ID returns false
+        boolean result = registry.registerSession(null, mockSession1, true);
+        assertFalse(result);
     }
 
     @Test
-    public void testRegisterSession_ThrowsExceptionForEmptySessionId() {
-        // Test empty session ID throws exception
-        assertThrows(IllegalArgumentException.class, () -> {
-            registry.registerSession("", mockSession1, true);
-        });
+    public void testRegisterSession_ReturnsFalseForEmptySessionId() {
+        // Test empty session ID returns false
+        boolean result = registry.registerSession("", mockSession1, true);
+        assertFalse(result);
     }
 
     @Test
-    public void testRegisterSession_ThrowsExceptionForNullSession() {
-        // Test null KieSession throws exception
-        assertThrows(IllegalArgumentException.class, () -> {
-            registry.registerSession("test-session", null, true);
-        });
+    public void testRegisterSession_ReturnsFalseForNullSession() {
+        // Test null KieSession returns false
+        boolean result = registry.registerSession("test-session", null, true);
+        assertFalse(result);
     }
 
     @Test
-    public void testRegisterSession_ThrowsExceptionForDuplicateSessionId() {
-        // Test duplicate session ID throws exception
-        registry.registerSession("test-session", mockSession1, true);
-
-        assertThrows(IllegalArgumentException.class, () -> {
-            registry.registerSession("test-session", mockSession2, true);
-        });
+    public void testRegisterSession_ReturnsFalseForDuplicateSessionId() {
+        // Test duplicate session ID returns false
+        boolean first = registry.registerSession("test-session", mockSession1, true);
+        boolean second = registry.registerSession("test-session", mockSession2, true);
+        
+        assertTrue(first);
+        assertFalse(second);
     }
 
     @Test
@@ -269,4 +267,86 @@ public class ThreadSafeSessionRegistryTest {
         assertFalse(registry.sessionExists("session-1"));
         assertTrue(registry.sessionExists("session-2"));
     }
+
+    @Test
+    public void testCheckOutSession_Success() throws Exception {
+        // Test successful session check-out
+        registry.registerSession("test-session", mockSession1, true);
+
+        try (org.openmrs.module.drools.session.SessionLease lease = 
+                registry.checkOutSession("test-session", 5, java.util.concurrent.TimeUnit.SECONDS)) {
+            
+            assertNotNull(lease);
+            assertEquals("test-session", lease.getSessionId());
+            assertSame(mockSession1, lease.getSession());
+            assertFalse(lease.isReleased());
+        }
+    }
+
+    @Test
+    public void testCheckOutSession_ThrowsExceptionForNonExistentSession() {
+        // Test checking out non-existent session throws exception
+        assertThrows(IllegalArgumentException.class, () -> {
+            registry.checkOutSession("non-existent", 5, java.util.concurrent.TimeUnit.SECONDS);
+        });
+    }
+
+    @Test
+    public void testCheckOutSession_PreventsDataRace() throws Exception {
+        // Test that check-out mechanism prevents concurrent access using multiple threads
+        registry.registerSession("test-session", mockSession1, true);
+
+        // Use a CountDownLatch to coordinate threads
+        final java.util.concurrent.CountDownLatch latch1 = new java.util.concurrent.CountDownLatch(1);
+        final java.util.concurrent.CountDownLatch latch2 = new java.util.concurrent.CountDownLatch(1);
+        final java.util.concurrent.atomic.AtomicBoolean thread2TimedOut = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+        // Thread 1: Acquire lock and hold it
+        Thread thread1 = new Thread(() -> {
+            try (org.openmrs.module.drools.session.SessionLease lease = 
+                    registry.checkOutSession("test-session", 5, java.util.concurrent.TimeUnit.SECONDS)) {
+                
+                assertNotNull(lease);
+                latch1.countDown(); // Signal that thread 1 has acquired the lock
+                
+                // Wait for thread 2 to attempt and fail
+                latch2.await(2, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        // Thread 2: Try to acquire same lock (should timeout)
+        Thread thread2 = new Thread(() -> {
+            try {
+                latch1.await(2, java.util.concurrent.TimeUnit.SECONDS); // Wait for thread 1 to acquire
+                
+                // Try to acquire - should timeout
+                registry.checkOutSession("test-session", 100, java.util.concurrent.TimeUnit.MILLISECONDS);
+                
+            } catch (java.util.concurrent.TimeoutException e) {
+                // Expected - lock held by thread 1
+                thread2TimedOut.set(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                latch2.countDown();
+            }
+        });
+
+        thread1.start();
+        thread2.start();
+
+        thread1.join(5000);
+        thread2.join(5000);
+
+        assertTrue(thread2TimedOut.get(), "Thread 2 should have timed out waiting for lock");
+        
+        // After threads complete, should be able to check out again
+        try (org.openmrs.module.drools.session.SessionLease lease = 
+                registry.checkOutSession("test-session", 1, java.util.concurrent.TimeUnit.SECONDS)) {
+            assertNotNull(lease);
+        }
+    }
 }
+

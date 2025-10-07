@@ -5,7 +5,6 @@ import org.kie.api.runtime.KieSession;
 import org.openmrs.module.drools.api.DroolsEngineService;
 import org.openmrs.module.drools.session.DroolsExecutionResult;
 import org.openmrs.module.drools.session.DroolsSessionConfig;
-import org.openmrs.module.drools.session.SessionMetadata;
 import org.openmrs.module.drools.session.ThreadSafeSessionRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -14,7 +13,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,9 +52,11 @@ public class DroolsSessionExecutor {
     }
 
     /**
-     * Executes rules against an existing session in the registry.
-     * This method retrieves a session from the registry and executes rules on it
-     * without creating a new session or disposing it afterward.
+     * Executes rules against an existing session in the registry using SessionLease.
+     * This method checks out the session with a lock, executes rules, and automatically
+     * releases the lock via try-with-resources.
+     * 
+     * <p>This prevents Thread1/Thread2 data race conditions through the check-out mechanism.</p>
      *
      * @param sessionId the ID of the existing session
      * @param params execution parameters
@@ -64,15 +64,75 @@ public class DroolsSessionExecutor {
      * @throws IllegalArgumentException if session doesn't exist in registry
      */
     public DroolsExecutionResult executeAgainstExistingSession(String sessionId, Map<String, String> params) {
-        Optional<KieSession> sessionOpt = sessionRegistry.getSession(sessionId);
-        if (!sessionOpt.isPresent()) {
+        // Verify session exists first
+        if (!sessionRegistry.sessionExists(sessionId)) {
             throw new IllegalArgumentException(
                     "Session '" + sessionId + "' not found in registry. " +
                             "Only auto-startable sessions can be queried via REST."
             );
         }
 
-        return performExecution(sessionId, params);
+        try {
+            // Check out session with 10-second timeout using try-with-resources
+            try (org.openmrs.module.drools.session.SessionLease lease = 
+                    sessionRegistry.checkOutSession(sessionId, 10, java.util.concurrent.TimeUnit.SECONDS)) {
+                
+                // Get session config and prepare execution
+                DroolsSessionConfig config = droolsService.getSessionConfig(sessionId);
+                String clazzName = config.getReturnObjectsTypeClassName();
+                if (StringUtils.isBlank(clazzName)) {
+                    throw new IllegalArgumentException(
+                            "Missing return object type class configuration for session '" + sessionId + "'. " +
+                                    "The session configuration must specify a valid fully-qualified class name " +
+                                    "in the 'returnObjectsTypeClassName' property."
+                    );
+                }
+
+                // Resolve facts from parameters
+                List<Object> facts = parameterFactResolver.resolveFacts(config, params);
+
+                // Get the checked-out session
+                KieSession session = lease.getSession();
+
+                // Insert facts and fire rules
+                facts.forEach(session::insert);
+                int fired = session.fireAllRules();
+
+                // Get results
+                List<?> results = droolsService.getSessionObjects(session, 
+                        resolveClass(clazzName, session.getKieBase()));
+
+                @SuppressWarnings("unchecked")
+                List<Object> objectResults = (List<Object>) results;
+                return new org.openmrs.module.drools.session.DroolsExecutionResult(
+                        sessionId, fired, objectResults);
+                
+            } // Lock automatically released here
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for session lock", e);
+        } catch (java.util.concurrent.TimeoutException e) {
+            throw new RuntimeException("Timeout waiting for session lock for '" + sessionId + "'", e);
+        }
+    }
+    
+    /**
+     * Helper method to resolve class by name.
+     */
+    private Class<?> resolveClass(String className, org.kie.api.KieBase kieBase) {
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            // Try Drools-declared types
+            org.kie.api.definition.type.FactType factType = kieBase.getFactType(
+                    className.substring(0, className.lastIndexOf('.')),
+                    className.substring(className.lastIndexOf('.') + 1)
+            );
+            if (factType != null) {
+                return factType.getFactClass();
+            }
+            throw new RuntimeException("Could not resolve class: " + className, e);
+        }
     }
 
     /**

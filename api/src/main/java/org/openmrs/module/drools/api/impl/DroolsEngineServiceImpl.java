@@ -32,8 +32,7 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 	@Autowired
 	private DroolsConfig droolsConfig;
 
-	@Autowired
-	private ThreadSafeSessionRegistry sessionRegistry;
+	// Note: sessionRegistry removed - registration now handled by DroolsEngineRunner
 
 	private Map<String, DroolsSessionConfig> ruleConfigs;
 
@@ -54,10 +53,8 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 			session = CommonUtils.createKieSession(kieContainer, ruleConfigs.get(sessionId), droolsConfig.getExternalEvaluatorManager(), globalBindings);
 			eventsManager.subscribeSessionEventListenersIfNecessary(sessionId, session, ruleConfigs);
 
-			DroolsSessionConfig config = ruleConfigs.get(sessionId);
-			if (config.getAutoStart()) {
-				sessionRegistry.registerSession(sessionId, session, true);
-			}
+			// Note: Registration moved to DroolsEngineRunner.run() for auto-startable sessions
+			// This method now only creates sessions without registering them
 
 			return session;
 		} else {
@@ -85,7 +82,9 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 			facts.forEach(currentSession::insert);
 			int fired = currentSession.fireAllRules(getSessionAgendaFilter(currentSession, ruleConfigs.get(sessionId)));
 			List<?> results = getSessionObjects(currentSession, resolveClass(resultClassName, currentSession.getKieBase()));
-			result = new DroolsExecutionResult(sessionId, fired, (List<Object>) results);
+			@SuppressWarnings("unchecked")
+			List<Object> objectResults = (List<Object>) results;
+			result = new DroolsExecutionResult(sessionId, fired, objectResults);
 			currentSession.dispose();
 
 		} else {

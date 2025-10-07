@@ -22,7 +22,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -73,12 +72,12 @@ public class DroolsSessionController extends BaseRestController {
     }
 
     /**
-     * GET /ws/rest/v1/drools/session
+     * GET /ws/rest/v1/drools/rules
      * Retrieves information about all active sessions in the registry.
      *
      * @return SimpleObject containing activeIds, autoStartableIds, and totalCount
      */
-    @RequestMapping(value = "/session", method = RequestMethod.GET)
+    @RequestMapping(value = "/rules", method = RequestMethod.GET)
     @ResponseBody
     public SimpleObject getActiveSessions() {
         Collection<String> activeIds = sessionRegistry.getActiveSessionIds();
@@ -93,13 +92,13 @@ public class DroolsSessionController extends BaseRestController {
     }
 
     /**
-     * GET /ws/rest/v1/drools/session/{sessionId}
+     * GET /ws/rest/v1/drools/rules/{sessionId}
      * Retrieves detailed metadata for a specific session.
      *
      * @param sessionId the session identifier
      * @return SimpleObject with session metadata
      */
-    @RequestMapping(value = "/session/{sessionId}", method = RequestMethod.GET)
+    @RequestMapping(value = "/rules/{sessionId}", method = RequestMethod.GET)
     @ResponseBody
     public SimpleObject getSessionDetails(@PathVariable("sessionId") String sessionId) {
         SessionMetadata metadata = sessionRegistry.getSessionMetadata(sessionId);
@@ -121,7 +120,7 @@ public class DroolsSessionController extends BaseRestController {
     }
 
     /**
-     * POST /ws/rest/v1/drools/session/{sessionId}/execute
+     * POST /ws/rest/v1/drools/rules/{sessionId}/execute
      * Executes rules against an existing session in the registry.
      * Only works for auto-startable sessions that are already registered.
      *
@@ -130,7 +129,7 @@ public class DroolsSessionController extends BaseRestController {
      * @param request HTTP request
      * @return SimpleObject with execution results
      */
-    @RequestMapping(value = "/session/{sessionId}/execute", method = RequestMethod.POST)
+    @RequestMapping(value = "/rules/{sessionId}/execute", method = RequestMethod.POST)
     @ResponseBody
     public SimpleObject executeAgainstSession(
             @PathVariable("sessionId") String sessionId,
@@ -160,13 +159,13 @@ public class DroolsSessionController extends BaseRestController {
     }
 
     /**
-     * DELETE /ws/rest/v1/drools/session/{sessionId}
+     * DELETE /ws/rest/v1/drools/rules/{sessionId}
      * Removes and disposes a session from the registry.
      *
      * @param sessionId the session identifier
      * @return SimpleObject with success status
      */
-    @RequestMapping(value = "/session/{sessionId}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/rules/{sessionId}", method = RequestMethod.DELETE)
     @ResponseBody
     public SimpleObject disposeSession(@PathVariable("sessionId") String sessionId) {
         boolean removed = sessionRegistry.removeSession(sessionId);
@@ -182,13 +181,13 @@ public class DroolsSessionController extends BaseRestController {
     }
 
     /**
-     * GET /ws/rest/v1/drools/session/{sessionId}/exists
+     * GET /ws/rest/v1/drools/rules/{sessionId}/exists
      * Checks if a session exists in the registry.
      *
      * @param sessionId the session identifier
      * @return SimpleObject with existence status
      */
-    @RequestMapping(value = "/session/{sessionId}/exists", method = RequestMethod.GET)
+    @RequestMapping(value = "/rules/{sessionId}/exists", method = RequestMethod.GET)
     @ResponseBody
     public SimpleObject sessionExists(@PathVariable("sessionId") String sessionId) {
         boolean exists = sessionRegistry.sessionExists(sessionId);
