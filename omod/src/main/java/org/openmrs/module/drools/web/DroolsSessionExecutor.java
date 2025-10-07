@@ -43,10 +43,16 @@ public class DroolsSessionExecutor {
         }
     }
 
+     /**
+     * Synchronous execution
+     */
     public DroolsExecutionResult executeSession(String sessionId, Map<String, String> params) {
         return performExecution(sessionId, params);
     }
 
+    /**
+     * Asynchronous execution
+     */
     public CompletableFuture<DroolsExecutionResult> executeSessionAsync(String sessionId, Map<String, String> params) {
         return CompletableFuture.supplyAsync(() -> performExecution(sessionId, params), executorService);
     }

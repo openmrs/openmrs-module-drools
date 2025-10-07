@@ -221,19 +221,17 @@ public class ThreadSafeSessionRegistryImpl implements ThreadSafeSessionRegistry 
 				if (removeSession(sessionId)) {
 					cleanedCount++;
 					log.debug("Cleaned up expired session '{}' (last accessed: {})", 
-							sessionId, meta.getLastAccessed());
-				}
+				sessionId, meta.getLastAccessed());
 			}
-		}
-		
-		if (cleanedCount > 0) {
-			log.debug("Automated cleanup completed: removed {} expired session(s)", cleanedCount);
-		} else {
-			log.debug("Automated cleanup completed: no expired sessions found");
 		}
 	}
 	
-	@Override
+	if (cleanedCount > 0) {
+		log.info("Automated cleanup completed: removed {} expired session(s)", cleanedCount);
+	} else {
+		log.debug("Automated cleanup completed: no expired sessions found");
+	}
+}	@Override
 	public long getActiveSessionCount() {
 		return sessions.size();
 	}
