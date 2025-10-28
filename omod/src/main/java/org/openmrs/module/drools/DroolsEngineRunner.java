@@ -6,7 +6,7 @@ import org.openmrs.api.context.Daemon;
 import org.openmrs.module.DaemonToken;
 import org.openmrs.module.drools.loader.RuleProviderLoader;
 import org.openmrs.module.drools.api.DroolsEngineService;
-import org.openmrs.module.drools.session.ThreadSafeSessionRegistry;
+import org.openmrs.module.drools.session.SessionRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +26,7 @@ public class DroolsEngineRunner implements Runnable {
     @Override
     public void run() {
         DroolsEngineService droolsEngineService = Context.getService(DroolsEngineService.class);
-        ThreadSafeSessionRegistry sessionRegistry = Context.getService(ThreadSafeSessionRegistry.class);
+        SessionRegistry sessionRegistry = Context.getService(SessionRegistry.class);
 
         // Load rule providers
         Context.getRegisteredComponents(RuleProviderLoader.class).forEach(ruleProviderLoader -> {
@@ -45,8 +45,8 @@ public class DroolsEngineRunner implements Runnable {
             // Fire initial rules
             session.fireAllRules();
             
-            // Register the session in the registry (auto-start logic moved here)
-            boolean registered = sessionRegistry.registerSession(sessionId, session, true);
+            // Register the session in the registry
+            boolean registered = sessionRegistry.registerSession(sessionId, session);
             if (registered) {
                 openSessions.add(session);
                 log.info("Auto-started and registered session '{}'", sessionId);
