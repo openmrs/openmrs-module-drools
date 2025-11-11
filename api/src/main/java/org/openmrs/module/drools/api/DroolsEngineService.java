@@ -6,9 +6,12 @@ import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.drools.session.DroolsExecutionResult;
 import org.openmrs.module.drools.session.DroolsSessionException;
 import org.openmrs.module.drools.session.DroolsSessionConfig;
+import org.openmrs.module.drools.session.SessionLease;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 public interface DroolsEngineService extends OpenmrsService {
@@ -94,5 +97,24 @@ public interface DroolsEngineService extends OpenmrsService {
 	public List<DroolsSessionConfig> getSessionsForAutoStart();
 
 	public DroolsSessionConfig getSessionConfig(String sessionId);
+
+	/**
+	 * Register an auto-startable session in the registry.
+	 * 
+	 * @param sessionId the session identifier
+	 * @param session the KieSession to register
+	 * @return true if registration was successful, false if session already exists
+	 */
+	public boolean registerAutoStartSession(String sessionId, KieSession session);
+
+	/**
+	 * Check out an auto-startable session from the registry with exclusive lock.
+	 * 
+	 * @param sessionId the session identifier
+	 * @param timeout the timeout duration
+	 * @param unit the timeout unit
+	 * @return Optional containing SessionLease if session exists, empty otherwise
+	 */
+	public Optional<SessionLease> checkOutAutoStartSession(String sessionId, long timeout, TimeUnit unit);
 
 }

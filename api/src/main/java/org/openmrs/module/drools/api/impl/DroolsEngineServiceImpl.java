@@ -19,6 +19,7 @@ import org.openmrs.module.drools.utils.CommonUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -32,7 +33,8 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 	@Autowired
 	private DroolsConfig droolsConfig;
 
-	// Note: sessionRegistry removed - registration now handled by DroolsEngineRunner
+	@Autowired
+	private SessionRegistry sessionRegistry;
 
 	private Map<String, DroolsSessionConfig> ruleConfigs;
 
@@ -254,6 +256,40 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 
 	public void setDroolsConfig(DroolsConfig droolsConfig) {
 		this.droolsConfig = droolsConfig;
+	}
+
+	/**
+	 * Register an auto-startable session in the registry.
+	 * 
+	 * @param sessionId the session identifier
+	 * @param session the KieSession to register
+	 * @return true if registration was successful, false if session already exists
+	 */
+	@Override
+	public boolean registerAutoStartSession(String sessionId, KieSession session) {
+		return sessionRegistry.registerSession(sessionId, session);
+	}
+
+	/**
+	 * Check out an auto-startable session from the registry with exclusive lock.
+	 * 
+	 * @param sessionId the session identifier
+	 * @param timeout the timeout duration
+	 * @param unit the timeout unit
+	 * @return Optional containing SessionLease if session exists, empty otherwise
+	 */
+	@Override
+	public Optional<SessionLease> checkOutAutoStartSession(String sessionId, long timeout, TimeUnit unit) {
+		try {
+			SessionLease lease = sessionRegistry.checkOutSession(sessionId, timeout, unit);
+			return Optional.of(lease);
+		} catch (IllegalArgumentException e) {
+			// Session doesn't exist
+			return Optional.empty();
+		} catch (InterruptedException | java.util.concurrent.TimeoutException e) {
+			// Could not acquire lock within timeout
+			return Optional.empty();
+		}
 	}
 
 }
