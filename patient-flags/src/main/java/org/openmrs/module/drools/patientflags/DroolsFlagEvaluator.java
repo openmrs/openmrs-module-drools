@@ -31,6 +31,8 @@ public class DroolsFlagEvaluator implements FlagEvaluator {
     public Boolean eval(Flag flag, Patient patient, Map<Object, Object> contextMap) {
         Cohort cohort = new Cohort();
         cohort.addMember(patient.getId());
+        // clear stale context
+        contextMap.remove(patient.getId());
         Cohort resultCohort = evalCohort(flag, cohort, contextMap);
         return !resultCohort.isEmpty();
     }
