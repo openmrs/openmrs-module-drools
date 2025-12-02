@@ -24,20 +24,43 @@ public class DroolsEngineRunner implements Runnable {
 
     @Override
     public void run() {
+        log.info("Starting Drools Engine auto-start process");
         DroolsEngineService droolsEngineService = Context.getService(DroolsEngineService.class);
 
+        log.debug("Loading rule providers");
         Context.getRegisteredComponents(RuleProviderLoader.class).forEach(ruleProviderLoader -> {
             try {
-                ruleProviderLoader.loadRuleProviders().forEach(droolsEngineService::registerRuleProvider);
+                log.debug("Processing rule provider loader: {}", ruleProviderLoader.getClass().getSimpleName());
+                ruleProviderLoader.loadRuleProviders().forEach(ruleProvider -> {
+                    log.debug("Registering rule provider: {}", ruleProvider.getClass().getSimpleName());
+                    droolsEngineService.registerRuleProvider(ruleProvider);
+                });
             } catch (Exception e) {
-                log.error("Error loading rule providers", e);
+                log.error("Error loading rule providers from loader: {}", ruleProviderLoader.getClass().getSimpleName(), e);
             }
         });
-        droolsEngineService.getSessionsForAutoStart().forEach(sessionConfig -> {
-            KieSession session = droolsEngineService.requestSession(sessionConfig.getSessionId());
-            session.fireAllRules();
-            openSessions.add(session);
+
+        var autoStartSessions = droolsEngineService.getSessionsForAutoStart();
+        log.info("Found {} session(s) configured for auto-start", autoStartSessions.size());
+
+        autoStartSessions.forEach(sessionConfig -> {
+            try {
+                String sessionId = sessionConfig.getSessionId();
+                log.info("Auto-starting session: {}", sessionId);
+                long startTime = System.currentTimeMillis();
+
+                KieSession session = droolsEngineService.requestSession(sessionId);
+                int rulesFired = session.fireAllRules();
+                openSessions.add(session);
+
+                long duration = System.currentTimeMillis() - startTime;
+                log.info("Auto-start session {} completed: {} rules fired in {}ms", sessionId, rulesFired, duration);
+            } catch (Exception e) {
+                log.error("Error auto-starting session: {}", sessionConfig.getSessionId(), e);
+            }
         });
+
+        log.info("Drools Engine auto-start process completed. {} session(s) active", openSessions.size());
     }
 
     public void startDroolsEngine() {
@@ -45,7 +68,12 @@ public class DroolsEngineRunner implements Runnable {
     }
 
     public void shutdown() {
-        this.openSessions.forEach(KieSession::dispose);
+        log.info("Shutting down Drools Engine, disposing {} open session(s)", openSessions.size());
+        this.openSessions.forEach(session -> {
+            log.debug("Disposing session");
+            session.dispose();
+        });
+        log.info("Drools Engine shutdown complete");
     }
 
     public static void setDaemonToken(DaemonToken token) {

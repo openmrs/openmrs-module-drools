@@ -16,6 +16,8 @@ import org.openmrs.module.drools.api.RuleProvider;
 import org.openmrs.module.drools.event.DroolsEventsManager;
 import org.openmrs.module.drools.session.*;
 import org.openmrs.module.drools.utils.CommonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.*;
@@ -23,6 +25,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class DroolsEngineServiceImpl extends BaseOpenmrsService implements DroolsEngineService {
+
+	private static final Logger log = LoggerFactory.getLogger(DroolsEngineServiceImpl.class);
 
 	private KieContainer kieContainer;
 
@@ -40,30 +44,48 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 
 	@Override
 	public KieSession requestSession(String sessionId) {
+		log.info("Requesting Drools session: {}", sessionId);
 		KieSession session;
 		if (ruleConfigs == null) {
+			log.debug("Initializing session configurations");
 			ruleConfigs = initializeSessionConfigs();
 		}
 		if (kieContainer == null) {
+			log.debug("Building KieContainer");
 			kieContainer = kieContainerBuilder.build();
 		}
 		if (ruleConfigs.get(sessionId) != null) {
+			log.debug("Creating KieSession for sessionId: {}", sessionId);
 			session = CommonUtils.createKieSession(kieContainer, ruleConfigs.get(sessionId), droolsConfig.getExternalEvaluatorManager(), globalBindings);
 			eventsManager.subscribeSessionEventListenersIfNecessary(sessionId, session, ruleConfigs);
-
+			log.info("Successfully created session: {}", sessionId);
 			return session;
 		} else {
+			log.error("Session configuration not found for: {}", sessionId);
 			throw new DroolsSessionException("Can't find session configuration for: " + sessionId);
 		}
 	}
 
 	@Override
 	public KieSession evaluate(String sessionId, Collection<? extends OpenmrsObject> facts) {
+		log.info("Evaluating session: {} with {} facts", sessionId, facts.size());
+		long startTime = System.currentTimeMillis();
+
 		KieSession currentSession = requestSession(sessionId);
 		if (currentSession != null) {
-			facts.forEach(currentSession::insert);
-			currentSession.fireAllRules(getSessionAgendaFilter(currentSession, ruleConfigs.get(sessionId)));
+			log.debug("Inserting {} facts into session: {}", facts.size(), sessionId);
+			facts.forEach(fact -> {
+				log.trace("Inserting fact: {} ({})", fact.getClass().getSimpleName(), fact);
+				currentSession.insert(fact);
+			});
+
+			log.debug("Firing all rules for session: {}", sessionId);
+			int rulesFired = currentSession.fireAllRules(getSessionAgendaFilter(currentSession, ruleConfigs.get(sessionId)));
+			long duration = System.currentTimeMillis() - startTime;
+
+			log.info("Session {} evaluation completed: {} rules fired in {}ms", sessionId, rulesFired, duration);
 		} else {
+			log.error("Could not establish KIE session: {}", sessionId);
 			throw new DroolsSessionException("Could not establish a KIE session of ID: " + sessionId);
 		}
 		return currentSession;
@@ -71,16 +93,34 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 
 	@Override
 	public DroolsExecutionResult evaluate(String sessionId, Collection<Object> facts, String resultClassName) {
+		log.info("Evaluating session: {} with {} facts, expecting results of type: {}", sessionId, facts.size(), resultClassName);
+		long startTime = System.currentTimeMillis();
+
 		KieSession currentSession = requestSession(sessionId);
 		DroolsExecutionResult result;
 		if (currentSession != null) {
-			facts.forEach(currentSession::insert);
+			log.debug("Inserting {} facts into session: {}", facts.size(), sessionId);
+			facts.forEach(fact -> {
+				log.trace("Inserting fact: {} ({})", fact.getClass().getSimpleName(), fact);
+				currentSession.insert(fact);
+			});
+
+			log.debug("Firing all rules for session: {}", sessionId);
 			int fired = currentSession.fireAllRules(getSessionAgendaFilter(currentSession, ruleConfigs.get(sessionId)));
+
+			log.debug("Retrieving session objects of type: {}", resultClassName);
 			List<?> results = getSessionObjects(currentSession, resolveClass(resultClassName, currentSession.getKieBase()));
 			result = new DroolsExecutionResult(sessionId, fired, (List<Object>) results);
+
+			long duration = System.currentTimeMillis() - startTime;
+			log.info("Session {} evaluation completed: {} rules fired, {} results returned in {}ms",
+					sessionId, fired, results.size(), duration);
+
 			currentSession.dispose();
+			log.debug("Session {} disposed", sessionId);
 
 		} else {
+			log.error("Could not establish KIE session: {}", sessionId);
 			throw new DroolsSessionException("Could not establish a KIE session of ID: " + sessionId);
 		}
 
