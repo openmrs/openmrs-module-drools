@@ -36,6 +36,9 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 	@Autowired
 	private DroolsConfig droolsConfig;
 
+	@Autowired
+	private SessionRegistry sessionRegistry;
+
 	private Map<String, DroolsSessionConfig> ruleConfigs;
 
 	private DroolsEventsManager eventsManager = new DroolsEventsManager();
@@ -54,16 +57,32 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 			log.debug("Building KieContainer");
 			kieContainer = kieContainerBuilder.build();
 		}
-		if (ruleConfigs.get(sessionId) != null) {
-			log.debug("Creating KieSession for sessionId: {}", sessionId);
-			session = CommonUtils.createKieSession(kieContainer, ruleConfigs.get(sessionId), droolsConfig.getExternalEvaluatorManager(), globalBindings);
-			eventsManager.subscribeSessionEventListenersIfNecessary(sessionId, session, ruleConfigs);
-			log.info("Successfully created session: {}", sessionId);
-			return session;
-		} else {
+
+		DroolsSessionConfig config = ruleConfigs.get(sessionId);
+		if (config == null) {
 			log.error("Session configuration not found for: {}", sessionId);
 			throw new DroolsSessionException("Can't find session configuration for: " + sessionId);
 		}
+
+		if (config.getAutoStart() && sessionRegistry.sessionExists(sessionId)) {
+			log.debug("Retrieving auto-start session from registry: {}", sessionId);
+			try {
+				SessionLease lease = sessionRegistry.checkOutSession(sessionId, 5,
+						java.util.concurrent.TimeUnit.SECONDS);
+				log.info("Successfully retrieved session from registry: {}", sessionId);
+				return lease.getSession();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new DroolsSessionException("Interrupted while checking out session: " + sessionId, e);
+			}
+		}
+
+		log.debug("Creating new KieSession for sessionId: {}", sessionId);
+		session = CommonUtils.createKieSession(kieContainer, config,
+				droolsConfig.getExternalEvaluatorManager(), globalBindings);
+		eventsManager.subscribeSessionEventListenersIfNecessary(sessionId, session, ruleConfigs);
+		log.info("Successfully created session: {}", sessionId);
+		return session;
 	}
 
 	@Override
@@ -287,6 +306,24 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 
 	public void setDroolsConfig(DroolsConfig droolsConfig) {
 		this.droolsConfig = droolsConfig;
+	}
+
+	@Override
+	public void registerAutoStartSession(String sessionId, KieSession session) {
+		log.info("Registering auto-start session via service: {}", sessionId);
+		sessionRegistry.registerSession(sessionId, session);
+	}
+
+	@Override
+	public SessionLease checkOutAutoStartSession(String sessionId, long timeout, java.util.concurrent.TimeUnit unit)
+			throws InterruptedException {
+		log.debug("Checking out auto-start session via service: {}", sessionId);
+		return sessionRegistry.checkOutSession(sessionId, timeout, unit);
+	}
+
+	@Override
+	public boolean isSessionRegistered(String sessionId) {
+		return sessionRegistry.sessionExists(sessionId);
 	}
 
 }
