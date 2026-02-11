@@ -119,7 +119,7 @@ public class DroolsDateUtils {
     }
 
     /**
-     * Checks if the difference between start and end is >= threshold in given granularity.
+     * Checks if the difference between start and end is at least the threshold in given granularity.
      *
      * @param start the start date
      * @param end the end date
@@ -158,7 +158,7 @@ public class DroolsDateUtils {
      * @param start the start date
      * @param end the end date
      * @param granularity the granularity
-     * @return the difference (end - start) in given units, negative if end < start
+     * @return the difference (end - start) in given units, negative if end is before start
      */
     public static long diff(Date start, Date end, Granularity granularity) {
         if (start == null || end == null || granularity == null) {

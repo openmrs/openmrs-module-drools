@@ -24,6 +24,7 @@ public interface DroolsCalculationService {
      *
      * // Check if most recent diagnosis equals a specific concept
      * checkMostRecentObs(patient, "CIEL:1284", Operator.EQUALS, "CIEL:5622");
+     * }</pre>
      *
      * @param patient the patient whose observations will be evaluated; must not be null
      * @param conceptRef the concept reference (UUID or mapping)
