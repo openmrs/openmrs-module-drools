@@ -10,6 +10,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.drools.utils.DroolsDateUtils;
 import java.text.ParseException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -93,7 +94,7 @@ public class CalculationUtils {
 
     public static List<String> splitValues(String value) {
         if (value == null || value.trim().isEmpty()) {
-            return List.of();
+            return Collections.emptyList();
         }
 
         return Arrays.stream(value.split(","))

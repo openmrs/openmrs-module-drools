@@ -10,7 +10,7 @@ stages:
       manual: false
       final: false
       jobs:
-        - Build and Test JDK 11
+        - Build and Test JDK 8
   - Deploy:
       manual: false
       final: false
@@ -21,7 +21,7 @@ stages:
       final: false
       jobs:
         - Release to Maven
-Build and Test JDK 11:
+Build and Test JDK 8:
   key: BTJ8
   tasks:
     - checkout:
@@ -61,7 +61,7 @@ Release to Maven:
   key: RTM
   tasks:
     - checkout:
-        force-clean-build: 'false'
+        force-clean-build: 'true'
         description: Checkout Default Repository
     - checkout:
         repository: Release scripts
@@ -117,7 +117,7 @@ Release to Maven:
         description: Retrieve next snaphot version
   artifact-subscriptions: []
 variables:
-  build.docker.image.id: maven:3.9.9-amazoncorretto-11
+  build.docker.image.id: maven:3.9.9-amazoncorretto-8
   maven.development.version: 1.1.0-SNAPSHOT
   maven.release.version: 1.0.0
 repositories:

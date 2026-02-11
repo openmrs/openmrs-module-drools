@@ -4,7 +4,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.openmrs.ConceptDatatype;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Set;
 
 public enum Operator {
@@ -12,8 +14,8 @@ public enum Operator {
     /**
      * Equals
      */
-    EQUALS(Set.of(ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME, ConceptDatatype.BOOLEAN,
-            ConceptDatatype.CODED, ConceptDatatype.NUMERIC)) {
+    EQUALS(new HashSet<>(Arrays.asList(ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME, ConceptDatatype.BOOLEAN,
+            ConceptDatatype.CODED, ConceptDatatype.NUMERIC))) {
         @Autowired
         public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
             OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype())
@@ -29,7 +31,7 @@ public enum Operator {
     /**
      * Less than
      */
-    LT(Set.of(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME)) {
+    LT(new HashSet<>(Arrays.asList(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME))) {
         @Autowired
         public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
             OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype())
@@ -45,7 +47,7 @@ public enum Operator {
     /**
      * Greater than
      */
-    GT(Set.of(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME)) {
+    GT(new HashSet<>(Arrays.asList(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME))) {
         @Autowired
         public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
             OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype())
@@ -61,7 +63,7 @@ public enum Operator {
     /**
      * Less than or equal to
      */
-    LTE(Set.of(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME)) {
+    LTE(new HashSet<>(Arrays.asList(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME))) {
         @Autowired
         public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
             OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype())
@@ -78,7 +80,7 @@ public enum Operator {
     /**
      * Greater than or equal to
      */
-    GTE(Set.of(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME)) {
+    GTE(new HashSet<>(Arrays.asList(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME))) {
         @Autowired
         public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
             OperandsBuilder.Operands operands = new OperandsBuilder(left, right, datatype.getDatatype())
@@ -96,8 +98,8 @@ public enum Operator {
     /**
      * Checks if a given obs value exists -- Applicable to all obs
      */
-    EXISTS(Set.of(ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME, ConceptDatatype.BOOLEAN,
-            ConceptDatatype.CODED, ConceptDatatype.NUMERIC)) {
+    EXISTS(new HashSet<>(Arrays.asList(ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME, ConceptDatatype.BOOLEAN,
+            ConceptDatatype.CODED, ConceptDatatype.NUMERIC))) {
         @Autowired
         public boolean apply(Object left, Object ignored, ConceptDatatypeWrapper datatype) {
             if (left == null) {
@@ -113,7 +115,7 @@ public enum Operator {
     /**
      * Applicable to numerics and dates
      */
-    BETWEEN(Set.of(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME)) {
+    BETWEEN(new HashSet<>(Arrays.asList(ConceptDatatype.NUMERIC, ConceptDatatype.DATE, ConceptDatatype.DATETIME, ConceptDatatype.TIME))) {
         // TODO: Add implementation
         @Autowired
         public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {
@@ -125,7 +127,7 @@ public enum Operator {
      * Applicable to numerics, coded. Example usage:
      * {@code checkLatestObs(patient, "CIEL:123", Operator.IN,  value1, value2, value3)})
      */
-    IN(Set.of(ConceptDatatype.NUMERIC, ConceptDatatype.CODED)) {
+    IN(new HashSet<>(Arrays.asList(ConceptDatatype.NUMERIC, ConceptDatatype.CODED))) {
         // TODO: Add implementation
         @Autowired
         public boolean apply(Object left, Object right, ConceptDatatypeWrapper datatype) {

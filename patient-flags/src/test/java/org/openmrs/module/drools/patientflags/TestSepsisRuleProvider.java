@@ -9,6 +9,7 @@ import org.openmrs.module.drools.session.ExternalEvaluator;
 import org.openmrs.module.drools.session.DroolsSessionConfig;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -23,7 +24,7 @@ public class TestSepsisRuleProvider implements RuleProvider  {
 
     @Override
     public List<RuleResource> getRuleResources() {
-        return List.of(new RuleResource("Test Sepsis Rules", RULES_PATH, ResourceType.DTABLE));
+        return Collections.singletonList(new RuleResource("Test Sepsis Rules", RULES_PATH, ResourceType.DTABLE));
     }
 
     @Override
@@ -32,7 +33,7 @@ public class TestSepsisRuleProvider implements RuleProvider  {
         config.setSessionId("Test Sepsis");
         config.setAutoStart(false);
         config.getGlobals().put("service", Context.getRegisteredComponents(DroolsCalculationService.class).get(0));
-        return List.of(config);
+        return Collections.singletonList(config);
     }
 
     @Override

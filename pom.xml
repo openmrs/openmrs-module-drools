@@ -76,6 +76,12 @@
 				<artifactId>event-api</artifactId>
 				<version>${eventVersion}</version>
 				<scope>provided</scope>
+				<exclusions>
+					<exclusion>
+						<groupId>com.ibm.icu</groupId>
+						<artifactId>icu4j</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.openmrs.api</groupId>
@@ -270,14 +276,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>3.5.3</version>
-					<configuration>
-						<argLine>
-							--add-opens java.base/java.lang=ALL-UNNAMED
-							--add-opens java.base/java.util=ALL-UNNAMED
-							--add-opens java.base/java.lang.reflect=ALL-UNNAMED
-						</argLine>
-					</configuration>
+					<version>2.22.2</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>

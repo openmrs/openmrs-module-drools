@@ -70,13 +70,13 @@ public class DroolsCalculationServiceImp implements DroolsCalculationService {
         }
 
         List<Obs> obsList = Context.getObsService().getObservations(
-                List.of(patient),
+                Collections.singletonList(patient),
                 null,
-                List.of(concept),
+                Collections.singletonList(concept),
                 null,
                 null,
                 null,
-                List.of("obsDatetime"),
+                Collections.singletonList("obsDatetime"),
                 1,
                 null,
                 fromDate,

@@ -1,7 +1,7 @@
 package org.openmrs.module.drools.session;
 
 import org.apache.commons.lang3.StringUtils;
-import org.drools.base.definitions.rule.impl.RuleImpl;
+import org.drools.core.definitions.rule.impl.RuleImpl;
 import org.drools.core.reteoo.RuleTerminalNodeLeftTuple;
 import org.kie.api.runtime.rule.AgendaFilter;
 import org.kie.api.runtime.rule.Match;

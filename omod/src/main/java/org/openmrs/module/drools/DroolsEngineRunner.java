@@ -40,7 +40,7 @@ public class DroolsEngineRunner implements Runnable {
             }
         });
 
-        var autoStartSessions = droolsEngineService.getSessionsForAutoStart();
+        List<org.openmrs.module.drools.session.DroolsSessionConfig> autoStartSessions = droolsEngineService.getSessionsForAutoStart();
         log.info("Found {} session(s) configured for auto-start", autoStartSessions.size());
 
         autoStartSessions.forEach(sessionConfig -> {
