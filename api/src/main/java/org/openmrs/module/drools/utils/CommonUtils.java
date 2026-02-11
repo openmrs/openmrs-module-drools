@@ -4,14 +4,21 @@ import org.drools.decisiontable.InputType;
 import org.drools.decisiontable.SpreadsheetCompiler;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
+import org.openmrs.Concept;
+import org.openmrs.ConceptMap;
+import org.openmrs.ConceptMapType;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.drools.session.ExternalEvaluatorManager;
 import org.openmrs.module.drools.session.DroolsSessionConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class CommonUtils {
 
@@ -84,5 +91,84 @@ public class CommonUtils {
             drlFileWriter.write(drlContent);
         }
 
+    }
+
+    /**
+     * Gets a concept by its SAME-AS mapping to an external source.
+     * Unlike ConceptService.getConceptByMapping(), this method only considers
+     * SAME-AS mappings, avoiding the "Multiple non-retired concepts found" error
+     * that occurs when a concept has both SAME-AS and NARROWER-THAN mappings.
+     *
+     * @param code The concept code in the external source
+     * @param sourceName The name of the concept source (e.g., "CIEL")
+     * @return The concept with a SAME-AS mapping to the given code, or null if not found
+     */
+    public static Concept getConceptBySameAsMapping(String code, String sourceName) {
+        if (code == null || sourceName == null) {
+            return null;
+        }
+
+        List<Concept> concepts = Context.getConceptService().getConceptsByMapping(code, sourceName, false);
+        if (concepts == null || concepts.isEmpty()) {
+            return null;
+        }
+
+        // Filter for SAME-AS mapping type only
+        for (Concept concept : concepts) {
+            for (ConceptMap mapping : concept.getConceptMappings()) {
+                if (mapping.getConceptReferenceTerm() != null
+                        && mapping.getConceptReferenceTerm().getConceptSource() != null
+                        && sourceName.equals(mapping.getConceptReferenceTerm().getConceptSource().getName())
+                        && code.equals(mapping.getConceptReferenceTerm().getCode())) {
+                    ConceptMapType mapType = mapping.getConceptMapType();
+                    if (mapType != null && "SAME-AS".equalsIgnoreCase(mapType.getName())) {
+                        return concept;
+                    }
+                }
+            }
+        }
+
+        // Fall back to first result if no SAME-AS found (backwards compatibility)
+        log.warn("No SAME-AS mapping found for code {} from source {}, returning first match", code, sourceName);
+        return concepts.get(0);
+    }
+
+    /**
+     * Gets all concepts that have a SAME-AS or NARROWER-THAN mapping to the given code.
+     * This is useful for finding concepts that represent the same or more specific
+     * versions of a given terminology code (e.g., SNOMED CT).
+     *
+     * @param code The concept code in the external source
+     * @param sourceName The name of the concept source (e.g., "SNOMED CT")
+     * @return A set of concepts with SAME-AS or NARROWER-THAN mappings, or empty set if none found
+     */
+    public static Set<Concept> getConceptsBySameAsOrNarrowerThanMapping(String code, String sourceName) {
+        Set<Concept> result = new HashSet<>();
+        if (code == null || sourceName == null) {
+            return result;
+        }
+
+        List<Concept> concepts = Context.getConceptService().getConceptsByMapping(code, sourceName, false);
+        if (concepts == null || concepts.isEmpty()) {
+            return result;
+        }
+
+        for (Concept concept : concepts) {
+            for (ConceptMap mapping : concept.getConceptMappings()) {
+                if (mapping.getConceptReferenceTerm() != null
+                        && mapping.getConceptReferenceTerm().getConceptSource() != null
+                        && sourceName.equals(mapping.getConceptReferenceTerm().getConceptSource().getName())
+                        && code.equals(mapping.getConceptReferenceTerm().getCode())
+                        && mapping.getConceptMapType() != null) {
+                    String mapType = mapping.getConceptMapType().getName();
+                    if ("SAME-AS".equalsIgnoreCase(mapType) || "NARROWER-THAN".equalsIgnoreCase(mapType)) {
+                        result.add(concept);
+                        break;
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 }

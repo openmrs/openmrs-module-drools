@@ -48,7 +48,7 @@ public interface DroolsEngineService extends OpenmrsService {
 	 * @param <T>     the type of objects to retrieve
 	 * @param session the Drools session to query
 	 * @param tClass  the class object representing the type to retrieve
-	 * @return List<T> a list of objects of the specified type from the session
+	 * @return a list of objects of the specified type from the session
 	 * @throws DroolsSessionException if the session does not exist or cannot be
 	 *                                accessed
 	 */
@@ -62,7 +62,7 @@ public interface DroolsEngineService extends OpenmrsService {
 	 * @param session    the Drools session to query
 	 * @param tClass     the class object representing the type to retrieve
 	 * @param tPredicate the predicate that returned objects must satisfy
-	 * @return List<T> a list of matching objects from the session
+	 * @return a list of matching objects from the session
 	 * @throws DroolsSessionException if the session does not exist or cannot be
 	 *                                accessed
 	 */
