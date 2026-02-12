@@ -6,9 +6,11 @@ import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.drools.session.DroolsExecutionResult;
 import org.openmrs.module.drools.session.DroolsSessionException;
 import org.openmrs.module.drools.session.DroolsSessionConfig;
+import org.openmrs.module.drools.session.SessionLease;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 public interface DroolsEngineService extends OpenmrsService {
@@ -94,5 +96,54 @@ public interface DroolsEngineService extends OpenmrsService {
 	public List<DroolsSessionConfig> getSessionsForAutoStart();
 
 	public DroolsSessionConfig getSessionConfig(String sessionId);
+
+	/**
+	 * Registers an auto-start session in the session registry.
+	 * <p>
+	 * This method should be called during module startup for sessions configured
+	 * with autoStart=true. Registered sessions can be reused across multiple
+	 * requests via {@link #checkOutAutoStartSession}.
+	 * 
+	 * @param sessionId the unique identifier for the session
+	 * @param session   the KieSession instance to register
+	 */
+	public void registerAutoStartSession(String sessionId, KieSession session);
+
+	/**
+	 * Checks out an auto-start session for exclusive use.
+	 * <p>
+	 * This method provides thread-safe access to a registered auto-start session.
+	 * The returned {@link SessionLease} must be used in a try-with-resources block
+	 * to ensure proper lock release.
+	 * <p>
+	 * Example usage:
+	 * 
+	 * <pre>
+	 * try (SessionLease lease = service.checkOutAutoStartSession("mySession", 5, TimeUnit.SECONDS)) {
+	 * 	KieSession session = lease.getSession();
+	 * 	// Use session safely
+	 * } // Lock automatically released
+	 * </pre>
+	 * 
+	 * @param sessionId the unique identifier of the session to check out
+	 * @param timeout   the maximum time to wait for the lock
+	 * @param unit      the time unit of the timeout argument
+	 * @return a SessionLease providing exclusive access to the session
+	 * @throws IllegalArgumentException if the session does not exist
+	 * @throws RuntimeException         if the lock cannot be acquired within the
+	 *                                  timeout
+	 * @throws InterruptedException     if the thread is interrupted while waiting
+	 *                                  for the lock
+	 */
+	public SessionLease checkOutAutoStartSession(String sessionId, long timeout, TimeUnit unit)
+			throws InterruptedException;
+
+	/**
+	 * Checks if a session is registered in the session registry.
+	 * 
+	 * @param sessionId the unique identifier of the session
+	 * @return true if the session is registered, false otherwise
+	 */
+	public boolean isSessionRegistered(String sessionId);
 
 }

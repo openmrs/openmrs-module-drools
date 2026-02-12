@@ -51,6 +51,8 @@ public class DroolsEngineRunner implements Runnable {
 
                 KieSession session = droolsEngineService.requestSession(sessionId);
                 int rulesFired = session.fireAllRules();
+
+                droolsEngineService.registerAutoStartSession(sessionId, session);
                 openSessions.add(session);
 
                 long duration = System.currentTimeMillis() - startTime;
