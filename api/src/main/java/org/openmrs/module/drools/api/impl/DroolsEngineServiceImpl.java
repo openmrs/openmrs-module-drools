@@ -51,7 +51,8 @@ public class DroolsEngineServiceImpl extends BaseOpenmrsService implements Drool
 			ruleConfigs = initializeSessionConfigs();
 		}
 		if (kieContainer == null) {
-			log.debug("Building KieContainer");
+			log.debug("Adding rule resources and building KieContainer");
+			droolsConfig.addRuleResourcesToBuilder(kieContainerBuilder);
 			kieContainer = kieContainerBuilder.build();
 		}
 		if (ruleConfigs.get(sessionId) != null) {

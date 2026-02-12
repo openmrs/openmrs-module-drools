@@ -39,27 +39,35 @@ public class KieContainerBuilder {
         if (kieContainer != null) {
             return kieContainer;
         }
-        for (RuleResource resource : resources) {
-            try {
-                File file = new File(resource.getPath());
-                if (file.exists()) {
-                    kieFileSystem.write(kieServices.getResources()
-                            .newFileSystemResource(file)
-                            .setResourceType(resource.getResourceType()));
-                } else {
-                    // Fallback to classpath
-                    kieFileSystem.write(kieServices.getResources()
-                            .newClassPathResource(resource.getPath())
-                            .setResourceType(resource.getResourceType()));
-                }
+        // KIE operations (especially rule compilation) require the thread's context classloader
+        // to be set to the classloader that loaded the KIE classes in OpenMRS's module classloader environment.
+        ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(KieServices.class.getClassLoader());
+            for (RuleResource resource : resources) {
+                try {
+                    File file = new File(resource.getPath());
+                    if (file.exists()) {
+                        kieFileSystem.write(kieServices.getResources()
+                                .newFileSystemResource(file)
+                                .setResourceType(resource.getResourceType()));
+                    } else {
+                        // Fallback to classpath
+                        kieFileSystem.write(kieServices.getResources()
+                                .newClassPathResource(resource.getPath())
+                                .setResourceType(resource.getResourceType()));
+                    }
 
-            } catch (Exception e) {
-                log.error("Error while adding resource: " + resource.getPath(), e);
+                } catch (Exception e) {
+                    log.error("Error while adding resource: " + resource.getPath(), e);
+                }
             }
+            kieServices.newKieBuilder(kieFileSystem).buildAll();
+            this.kieContainer = kieServices.newKieContainer(kieServices.getRepository().getDefaultReleaseId());
+            return kieContainer;
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalClassLoader);
         }
-        kieServices.newKieBuilder(kieFileSystem).buildAll();
-        this.kieContainer = kieServices.newKieContainer(kieServices.getRepository().getDefaultReleaseId());
-        return kieContainer;
     }
 
     public KieContainerBuilder addResource(RuleResource resource) {

@@ -9,6 +9,7 @@
  */
 package org.openmrs.module.drools;
 
+import org.drools.compiler.kie.builder.impl.KieServicesImpl;
 import org.kie.api.KieServices;
 import org.kie.api.builder.KieFileSystem;
 import org.kie.api.io.ResourceType;
@@ -43,29 +44,55 @@ public class DroolsConfig {
 
 	@Bean
 	public KieContainerBuilder kieContainerBuilder() {
-		// Apache POI (used by Drools decision tables) relies on the Xerces XML parser from the JDK.
-		// However, OpenMRS core pulls in a third party Xerces variant (xercesImpl) which has different parser
-		// configuration classes. When both are on the classpath, the JVM may pick the wrong one,
-		// causing XML parsing errors at runtime. An alternative solution could be using an uber-jar.
-		System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl");
-		ruleProviders = Context.getRegisteredComponents(RuleProvider.class).stream().filter(RuleProvider::isEnabled)
-				.collect(Collectors.toList());
+		log.info("=== DROOLS: Creating KieContainerBuilder bean (rule providers loaded lazily) ===");
 
-		KieServices kieServices = KieServices.Factory.get();
+		// Apache POI (used by Drools decision tables) relies on the Xerces XML parser from the JDK.
+		System.setProperty("javax.xml.parsers.DocumentBuilderFactory", "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl");
+
+		// Create KieServices and KieFileSystem
+		KieServices kieServices = new KieServicesImpl();
 		KieFileSystem kieFileSystem = kieServices.newKieFileSystem();
 
+		// Load globals.drl
 		kieFileSystem.write(kieServices.getResources().newClassPathResource(GLOBALS_DRL_PATH)
 				.setResourceType(ResourceType.DRL));
 
+		// Create builder - rule providers will be loaded lazily when first session is requested
 		KieContainerBuilder builder = new KieContainerBuilder(kieServices, kieFileSystem);
 
-		// Load rules
+		log.info("=== DROOLS: KieContainerBuilder bean created successfully ===");
+		return builder;
+	}
+
+	/**
+	 * Loads rule providers from OpenMRS Context. Called lazily when needed.
+	 */
+	private void loadRuleProvidersIfNeeded() {
+		if (ruleProviders != null) {
+			return; // Already loaded
+		}
+		log.info("DROOLS: Loading rule providers from Context");
+		List<RuleProvider> allProviders = Context.getRegisteredComponents(RuleProvider.class);
+		ruleProviders = new java.util.ArrayList<>();
+		if (allProviders != null) {
+			for (RuleProvider provider : allProviders) {
+				if (provider != null && provider.isEnabled()) {
+					ruleProviders.add(provider);
+					registerProviderExternalEvaluators(provider);
+				}
+			}
+		}
+		log.info("DROOLS: Loaded {} enabled rule providers", ruleProviders.size());
+	}
+
+	/**
+	 * Adds rule resources from providers to the builder. Called before building KieContainer.
+	 */
+	public void addRuleResourcesToBuilder(KieContainerBuilder builder) {
+		loadRuleProvidersIfNeeded();
 		for (RuleProvider provider : ruleProviders) {
-			registerProviderExternalEvaluators(provider);
 			provider.getRuleResources().forEach(builder::addResource);
 		}
-
-		return builder;
 	}
 
 	public void registerProviderExternalEvaluators(RuleProvider provider) {
@@ -83,6 +110,7 @@ public class DroolsConfig {
 	}
 
 	public List<RuleProvider> getRuleProviders() {
+		loadRuleProvidersIfNeeded();
 		return ruleProviders;
 	}
 
