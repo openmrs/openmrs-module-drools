@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.openmrs.module</groupId>
         <artifactId>drools</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>drools-patient-flags</artifactId>
     <packaging>jar</packaging>
@@ -15,7 +15,7 @@
         <dependency>
 			<groupId>org.openmrs.module</groupId>
 			<artifactId>drools-api</artifactId>
-			<version>1.0.0</version>
+			<version>1.1.0-SNAPSHOT</version>
 		</dependency>
         <dependency>
             <groupId>org.openmrs.module</groupId>
@@ -30,7 +30,7 @@
         <dependency>
             <groupId>org.openmrs.module</groupId>
             <artifactId>drools-api</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.openmrs</groupId>
